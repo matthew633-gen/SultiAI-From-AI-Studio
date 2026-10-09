@@ -124,6 +124,18 @@ class SoundFX {
     }
   }
 
+  playCelebration() {
+    this.playFanfare();
+  }
+
+  playSuccess() {
+    this.playCorrect();
+  }
+
+  playError() {
+    this.playWrong();
+  }
+
   // Microphone listening tone
   playMicBeep() {
     const ctx = this.getContext();

@@ -43,6 +43,15 @@ export const LearnDashboard: React.FC<LearnDashboardProps> = ({
   const speakingScore = profile?.speechScoreAverage ?? 86;
   const vocabCount = profile?.vocabularyMastered ?? 74;
 
+  // Course category filter state
+  const [courseCategoryFilter, setCourseCategoryFilter] = useState<'all' | 'cebuano' | 'filipino' | 'english'>('all');
+
+  // Filter courses by selected language category
+  const filteredCourses = courses.filter((c) => {
+    if (courseCategoryFilter === 'all') return true;
+    return c.languageCategory === courseCategoryFilter;
+  });
+
   // View state for Learning Toolkit: show first 6 or all 13 modules
   const [showAllModules, setShowAllModules] = useState(false);
 
@@ -196,99 +205,94 @@ export const LearnDashboard: React.FC<LearnDashboardProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. MY COURSES (LEARNING ROADMAP)                                         */}
+      {/* 2. MY COURSES (LEARNING ROADMAP WITH LANGUAGE CATEGORY TABS)             */}
       {/* ========================================================================= */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between text-xs px-1">
           <span className="font-display font-black uppercase tracking-wider text-stone-500 dark:text-stone-400 text-[11px]">
-            My Courses & Roadmaps
+            Courses & Roadmaps
           </span>
-          <button
-            onClick={() => {
-              sounds.playTap();
-              onSelectCourse(currentCourse);
-            }}
-            className="text-[11px] font-bold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-0.5 cursor-pointer"
-          >
-            <span>View Courses →</span>
-          </button>
+          <span className="text-[10px] text-stone-400 font-medium">
+            Choose your language path
+          </span>
         </div>
 
-        {/* Primary Course: Beginner Bisaya */}
-        <div 
-          onClick={() => {
-            sounds.playTap();
-            onSelectCourse(currentCourse);
-          }}
-          className="p-4 bg-white dark:bg-[#11222D] hover:bg-stone-50 dark:hover:bg-[#152B37] rounded-3xl border border-stone-200/90 dark:border-white/10 shadow-xs transition-all cursor-pointer group space-y-3"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-display font-black text-sm text-stone-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                  Beginner Bisaya
-                </h3>
-                <span className="px-2 py-0.5 rounded text-[9px] font-mono font-black uppercase bg-teal-50 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-200/60 dark:border-teal-500/30">
-                  Active
+        {/* Course Language Category Filter Tabs */}
+        <div className="flex items-center gap-1.5 p-1 bg-stone-100 dark:bg-stone-800/60 rounded-2xl border border-stone-200/80 dark:border-white/5 text-xs font-bold overflow-x-auto scrollbar-none">
+          {[
+            { id: 'all', label: 'All Courses' },
+            { id: 'cebuano', label: '🇵🇭 Cebuano / Bisaya' },
+            { id: 'filipino', label: '🇵🇭 Filipino / Tagalog' },
+            { id: 'english', label: '🇺🇸 English' },
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => {
+                sounds.playTap();
+                setCourseCategoryFilter(cat.id as any);
+              }}
+              className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all cursor-pointer ${
+                courseCategoryFilter === cat.id
+                  ? 'bg-teal-600 text-white shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Dynamic Categorized Course Cards */}
+        <div className="space-y-2">
+          {filteredCourses.map((courseItem) => (
+            <div 
+              key={courseItem.id}
+              onClick={() => {
+                sounds.playTap();
+                onSelectCourse(courseItem);
+              }}
+              className="p-4 bg-white dark:bg-[#11222D] hover:bg-stone-50 dark:hover:bg-[#152B37] rounded-3xl border border-stone-200/90 dark:border-white/10 shadow-xs transition-all cursor-pointer group space-y-2.5"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">
+                      {courseItem.languageCategory === 'filipino' ? '🇵🇭' : courseItem.languageCategory === 'english' ? '🇺🇸' : '🇵🇭'}
+                    </span>
+                    <h3 className="font-display font-black text-sm text-stone-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                      {courseItem.title}
+                    </h3>
+                    <span className="px-2 py-0.5 rounded text-[9px] font-mono font-black uppercase bg-teal-50 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-200/60 dark:border-teal-500/30">
+                      {courseItem.level}
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 pt-0.5">
+                    {courseItem.subtitle}
+                  </p>
+                </div>
+
+                <span className="font-mono font-black text-xs text-teal-700 dark:text-teal-300 bg-stone-100 dark:bg-stone-800 px-2.5 py-1 rounded-xl shrink-0">
+                  {courseItem.progressPercent}%
                 </span>
               </div>
-              <p className="text-xs text-stone-500 dark:text-stone-400 pt-0.5">
-                Build your confidence in everyday Cebuano.
-              </p>
-            </div>
 
-            <span className="font-mono font-black text-xs text-teal-700 dark:text-teal-300 bg-stone-100 dark:bg-stone-800 px-2.5 py-1 rounded-xl shrink-0">
-              72%
-            </span>
-          </div>
-
-          {/* Visual Step Trail */}
-          <div className="pt-2 border-t border-stone-100 dark:border-white/5 space-y-1.5">
-            <div className="text-[10px] font-mono text-stone-400 dark:text-stone-500 uppercase tracking-wider font-bold">
-              Course Roadmap Trail:
-            </div>
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 text-[10px] font-mono font-medium scrollbar-none">
-              {ROADMAP_STEPS.map((step, idx) => (
-                <React.Fragment key={step.title}>
-                  <span className={`px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 ${
-                    step.status === 'done'
-                      ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-700/40'
-                      : step.status === 'current'
-                      ? 'bg-blue-600 text-white font-black shadow-xs ring-1 ring-blue-400'
-                      : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'
-                  }`}>
-                    {step.status === 'done' && '✓ '}
-                    {step.title}
+              {/* Progress Bar & Hours */}
+              <div className="space-y-1">
+                <div className="w-full bg-stone-100 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-teal-500 rounded-full"
+                    style={{ width: `${courseItem.progressPercent}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10px] font-mono text-stone-400">
+                  <span>{courseItem.totalLessons} Lessons · {courseItem.estimatedHours}</span>
+                  <span className="text-teal-600 dark:text-teal-400 font-bold group-hover:translate-x-0.5 transition-transform">
+                    Open Syllabus →
                   </span>
-                  {idx < ROADMAP_STEPS.length - 1 && (
-                    <span className="text-stone-300 dark:text-stone-600 text-xs shrink-0">→</span>
-                  )}
-                </React.Fragment>
-              ))}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Secondary Course: Everyday Bisaya */}
-        <div 
-          onClick={() => {
-            sounds.playTap();
-            if (courses[1]) onSelectCourse(courses[1]);
-          }}
-          className="p-3.5 bg-stone-50/70 dark:bg-[#11222D]/70 hover:bg-stone-100 dark:hover:bg-[#152B37] rounded-2xl border border-stone-200/80 dark:border-white/5 flex items-center justify-between gap-3 cursor-pointer group transition-all"
-        >
-          <div>
-            <div className="font-display font-black text-xs text-stone-800 dark:text-stone-200 group-hover:text-teal-600">
-              Everyday Bisaya
-            </div>
-            <div className="text-[11px] text-stone-400 font-medium">
-              Mindanao street slang & cultural nuances
-            </div>
-          </div>
-
-          <span className="text-[10px] font-mono font-bold text-stone-400 bg-white dark:bg-stone-800 px-2 py-1 rounded-lg border border-stone-200/60 dark:border-white/10 shrink-0">
-            Not started
-          </span>
+          ))}
         </div>
       </div>
 
@@ -421,27 +425,15 @@ export const LearnDashboard: React.FC<LearnDashboardProps> = ({
           </div>
         ))}
 
-        {/* Become a Tutor Action Banner */}
-        <div className="p-3 bg-stone-50 dark:bg-stone-800/50 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-xs font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
-              <span>👨‍🏫</span>
-              <span>Become a Tutor</span>
-            </div>
-            <p className="text-[10px] text-stone-500 dark:text-stone-400 truncate">
-              Teach Bisaya or Filipino · Academic Vetting & Review
-            </p>
-          </div>
-
-          <button
-            onClick={() => {
-              sounds.playTap();
-              setShowApplyTutorModal(true);
-            }}
-            className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-[11px] whitespace-nowrap cursor-pointer transition-colors shadow-2xs shrink-0"
+        {/* Discreet Academic Contact / Collaboration Note */}
+        <div className="pt-1 px-1 flex items-center justify-between text-[10.5px] text-stone-600 dark:text-stone-300">
+          <span>Interested in teaching or academic partnership?</span>
+          <a
+            href="mailto:genesis.diaz@jmc.edu.ph?subject=SultiAI%20Tutor%20%26%20Academic%20Inquiry"
+            className="text-teal-700 dark:text-teal-300 hover:underline font-bold"
           >
-            Become a Tutor →
-          </button>
+            Contact Developer →
+          </a>
         </div>
       </div>
 

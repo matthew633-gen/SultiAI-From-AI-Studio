@@ -1,3 +1,5 @@
+export type CourseLanguageCategory = 'cebuano' | 'filipino' | 'english';
+
 export interface CourseRoadmapStep {
   id: string;
   stepNumber: string;
@@ -12,6 +14,7 @@ export interface CourseRoadmapStep {
 
 export interface CourseData {
   id: string;
+  languageCategory: CourseLanguageCategory;
   title: string;
   titleBisaya: string;
   subtitle: string;
@@ -27,8 +30,12 @@ export interface CourseData {
 }
 
 export const COURSES: CourseData[] = [
+  // ---------------------------------------------------------------------------
+  // 1. CEBUANO / BISAYA COURSES
+  // ---------------------------------------------------------------------------
   {
     id: 'course_beginner',
+    languageCategory: 'cebuano',
     title: 'Beginner Bisaya',
     titleBisaya: 'Panugod nga Bisaya',
     subtitle: 'Build your confidence in everyday Cebuano & Davao Bisaya.',
@@ -106,6 +113,7 @@ export const COURSES: CourseData[] = [
   },
   {
     id: 'course_everyday',
+    languageCategory: 'cebuano',
     title: 'Everyday Bisaya',
     titleBisaya: 'Adlaw-Adlaw nga Bisaya',
     subtitle: 'Practical Visayas & Mindanao daily interactions.',
@@ -180,6 +188,7 @@ export const COURSES: CourseData[] = [
   },
   {
     id: 'course_conversational',
+    languageCategory: 'cebuano',
     title: 'Conversational Bisaya',
     titleBisaya: 'Madasigong Panagsulti',
     subtitle: 'Expressive discourse particles, humor & colloquial banter.',
@@ -199,7 +208,6 @@ export const COURSES: CourseData[] = [
         titleBisaya: 'Paggamit sa Gud, Bitaw, ug Diay',
         description: 'Express agreement ("Bitaw no!"), surprise ("Mao diay!"), and emphasis ("Ngano gud?").',
         lessonsCount: 2,
-        moduleId: 'mod_4',
       },
       {
         id: 'step_con_2',
@@ -217,39 +225,138 @@ export const COURSES: CourseData[] = [
         description: 'Narrating recent trips, shared memories, and teasing friends courteously.',
         lessonsCount: 2,
       },
+    ],
+  },
+
+  // ---------------------------------------------------------------------------
+  // 2. FILIPINO / TAGALOG COURSES
+  // ---------------------------------------------------------------------------
+  {
+    id: 'course_filipino_foundations',
+    languageCategory: 'filipino',
+    title: 'Beginner Filipino',
+    titleBisaya: 'Panimulang Filipino',
+    subtitle: 'Build confidence in standard Filipino & Tagalog expressions.',
+    description: 'Master respectful greetings (po / opo), introducing yourself, simple questions, and everyday Metro Manila communication.',
+    level: 'Beginner',
+    tag: 'Core Foundation',
+    accentColor: 'rose',
+    progressPercent: 30,
+    totalLessons: 10,
+    completedLessonsCount: 3,
+    estimatedHours: '4.5 hrs',
+    roadmapSteps: [
       {
-        id: 'step_con_4',
+        id: 'step_fil_1',
+        stepNumber: '01',
+        title: 'Magagalang na Pagbati (Po & Opo)',
+        titleBisaya: 'Magagalang na Pagbati',
+        description: 'Morning, noon, and evening greetings with respectful honorifics.',
+        lessonsCount: 2,
+      },
+      {
+        id: 'step_fil_2',
+        stepNumber: '02',
+        title: 'Pagsakay sa Jeep at MRT',
+        titleBisaya: 'Sakay sa Jeep at Tren',
+        description: 'Passing fares ("Makikisuyo po"), calling stops ("Para po!"), and asking train routes.',
+        lessonsCount: 2,
+      },
+      {
+        id: 'step_fil_3',
+        stepNumber: '03',
+        title: 'Pamilihan at Pagtawad',
+        titleBisaya: 'Pamimili sa Palengke',
+        description: 'Asking prices ("Magkano po?"), bargaining courteously ("Pwede pong tumawad?").',
+        lessonsCount: 2,
+      },
+      {
+        id: 'step_fil_eval',
         stepNumber: '04',
-        title: 'Workplace & Campus Camaraderie',
-        titleBisaya: 'Panag-uban sa Trabaho ug Eskwela',
-        description: 'Professional Visayan meeting etiquette and peer collaborations in Mindanao.',
-        lessonsCount: 2,
-      },
-      {
-        id: 'step_con_5',
-        stepNumber: '05',
-        title: 'Davao Bisaya vs Cebuano Nuances',
-        titleBisaya: 'Kalainan sa Davao Bisaya ug Cebuano',
-        description: 'Tagalog-Bisaya fusion markers ("Hala ka!", "Gani!", "Basig") vs classical Cebuano.',
-        lessonsCount: 2,
-      },
-      {
-        id: 'step_con_eval',
-        stepNumber: '06',
-        title: 'Conversational Capstone Assessment',
-        titleBisaya: 'Katapusang Pagsulay sa Panagsulti',
-        description: 'Open-ended dialogue scenario graded for natural pacing and discourse particle usage.',
+        title: 'Pagsusulit sa Filipino',
+        titleBisaya: 'Pagsusulit sa Kasanayan',
+        description: 'Comprehensive evaluation of spoken Filipino politeness and vocabulary.',
         lessonsCount: 1,
         isAssessment: true,
       },
       {
-        id: 'step_con_cert',
-        stepNumber: '07',
-        title: 'Conversational Mastery Certificate',
-        titleBisaya: 'Sertipiko sa Madasigong Panagsulti',
-        description: 'Credential testifying to spontaneous colloquial fluency in Southern Philippines Bisaya.',
+        id: 'step_fil_cert',
+        stepNumber: '05',
+        title: 'Sertipiko sa Wikang Filipino',
+        titleBisaya: 'Sertipiko sa Filipino',
+        description: 'Certified beginner fluency in conversational Filipino.',
         lessonsCount: 0,
         isCertificate: true,
+      },
+    ],
+  },
+  {
+    id: 'course_filipino_everyday',
+    languageCategory: 'filipino',
+    title: 'Everyday Filipino',
+    titleBisaya: 'Pang-araw-araw na Filipino',
+    subtitle: 'Fluid conversations, street directions, dining, and culture.',
+    description: 'Order food, ask directions, navigate emergency needs, and converse with colleagues comfortably.',
+    level: 'Elementary',
+    tag: 'Survival Fluency',
+    accentColor: 'purple',
+    progressPercent: 15,
+    totalLessons: 12,
+    completedLessonsCount: 1,
+    estimatedHours: '6.0 hrs',
+    roadmapSteps: [
+      {
+        id: 'step_fil_eve_1',
+        stepNumber: '01',
+        title: 'Kainan at Karinderya',
+        titleBisaya: 'Kainan at Pag-order',
+        description: 'Ordering rice, viands, extra broth, and paying restaurant bills.',
+        lessonsCount: 2,
+      },
+      {
+        id: 'step_fil_eve_2',
+        stepNumber: '02',
+        title: 'Direksyon at Kalye',
+        titleBisaya: 'Pagtatanong ng Daan',
+        description: 'Navigating Metro Manila and provincial streets with confidence.',
+        lessonsCount: 2,
+      },
+    ],
+  },
+
+  // ---------------------------------------------------------------------------
+  // 3. ENGLISH FOR FILIPINOS & REGIONAL LEARNERS
+  // ---------------------------------------------------------------------------
+  {
+    id: 'course_english_fluency',
+    languageCategory: 'english',
+    title: 'English Fluency & Communication',
+    titleBisaya: 'Pagsulti sa Iningles',
+    subtitle: 'Conversational, workplace & academic English fluency.',
+    description: 'Clear pronunciation, stress-timed rhythm, workplace discussions, and international everyday conversation.',
+    level: 'Intermediate',
+    tag: 'English Mastery',
+    accentColor: 'blue',
+    progressPercent: 40,
+    totalLessons: 10,
+    completedLessonsCount: 4,
+    estimatedHours: '5.0 hrs',
+    roadmapSteps: [
+      {
+        id: 'step_eng_1',
+        stepNumber: '01',
+        title: 'Clear Articulation & Vowels',
+        titleBisaya: 'Klarong Pagsulti sa Iningles',
+        description: 'Master vowel contrasts and consonant clusters without hesitation.',
+        lessonsCount: 2,
+      },
+      {
+        id: 'step_eng_2',
+        stepNumber: '02',
+        title: 'Workplace & Meeting Dialogue',
+        titleBisaya: 'Panag-istorya sa Trabaho',
+        description: 'Polite collaboration, asking questions, and pitching ideas.',
+        lessonsCount: 2,
       },
     ],
   },

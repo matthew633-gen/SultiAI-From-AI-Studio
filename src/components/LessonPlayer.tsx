@@ -32,20 +32,63 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [slowAudio, setSlowAudio] = useState(false);
 
-  const activities = lesson.activities;
-  const currentActivity: Activity = activities[currentIndex];
-  const progressPercent = Math.round(((currentIndex) / activities.length) * 100);
+  // Safely construct fallback activities if lesson.activities is undefined or empty
+  const defaultFallback: Activity = {
+    id: `act_${lesson?.id || 'default'}_1`,
+    type: 'flashcard',
+    prompt: `Core Concept: ${lesson?.title || 'Communication'}`,
+    promptBisaya: lesson?.titleBisaya || lesson?.title || 'Maayong adlaw',
+    phonetics: 'Natural cadence & intonation',
+    explanation: lesson?.description || 'Learn and practice this essential communication concept.',
+    culturalNote: 'SULTI AI companions accompany non-native and foreign learners with respectful regional phrasing.',
+  };
+
+  const fallbackActivities: Activity[] = [
+    defaultFallback,
+    {
+      id: `act_${lesson?.id || 'default'}_2`,
+      type: 'multiple_choice',
+      prompt: `What is the key phrase for "${lesson?.title || 'this lesson'}"?`,
+      options: [
+        lesson?.titleBisaya || 'Maayong adlaw kaninyo',
+        'Dili kini ang tubag',
+        'Sayop nga kapilian',
+        'Walay labot sa hilisgutan',
+      ],
+      correctAnswer: 0,
+      explanation: `Insakto kaayo! The core expression is "${lesson?.titleBisaya || lesson?.title}".`,
+    },
+    {
+      id: `act_${lesson?.id || 'default'}_3`,
+      type: 'pronunciation_drill',
+      prompt: `Pronounce: "${lesson?.titleBisaya || lesson?.title || 'Maayong buntag'}"`,
+      promptBisaya: lesson?.titleBisaya || lesson?.title || 'Maayong buntag',
+      phonetics: 'Speak clearly into the microphone',
+      explanation: 'Whisper speech recognition evaluates your acoustic concordance and vowel crispness.',
+    },
+  ];
+
+  // Robustly sanitize activities array
+  const rawActivities = (lesson && Array.isArray(lesson.activities) && lesson.activities.length > 0)
+    ? lesson.activities.filter((a): a is Activity => Boolean(a && typeof a === 'object' && a.type))
+    : [];
+
+  const activities: Activity[] = rawActivities.length > 0 ? rawActivities : fallbackActivities;
+
+  const safeIndex = Math.min(Math.max(0, currentIndex), Math.max(0, activities.length - 1));
+  const currentActivity: Activity = activities[safeIndex] || fallbackActivities[0] || defaultFallback;
+  const progressPercent = Math.round(((safeIndex) / Math.max(1, activities.length)) * 100);
 
   // Play audio (with normal or slow rate)
   const handlePlayAudio = (text?: string, isSlow: boolean = false) => {
     sounds.playTap();
-    const speechText = text || currentActivity.promptBisaya || currentActivity.prompt;
+    const speechText = text || currentActivity?.promptBisaya || currentActivity?.prompt || 'Maayong adlaw';
     speakBisaya(speechText, isSlow ? 0.75 : 1.0);
   };
 
   // Multiple Choice check
   const handleSelectOption = (idx: number) => {
-    if (feedback) return;
+    if (feedback || !currentActivity) return;
     sounds.playTap();
     setSelectedOption(idx);
     const isCorrect = idx === currentActivity.correctAnswer;
@@ -62,7 +105,7 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
       setHearts((prev) => Math.max(1, prev - 1));
       const correctText = typeof currentActivity.correctAnswer === 'number' && currentActivity.options
         ? currentActivity.options[currentActivity.correctAnswer]
-        : String(currentActivity.correctAnswer);
+        : String(currentActivity.correctAnswer ?? 0);
 
       setFeedback({
         isCorrect: false,
@@ -85,6 +128,7 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
   };
 
   const handleVerifyAssembly = () => {
+    if (!currentActivity) return;
     const constructed = assembledWords.join(' ');
     const isCorrect = constructed === currentActivity.correctAnswer;
 
@@ -101,7 +145,7 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
       setFeedback({
         isCorrect: false,
         message: 'Not quite in the right order.',
-        solution: String(currentActivity.correctAnswer),
+        solution: String(currentActivity.correctAnswer ?? ''),
       });
       setScores((prev) => [...prev, 60]);
     }
@@ -109,11 +153,12 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
 
   // Pronunciation Drill recording
   const handleStartSpeech = () => {
+    if (!currentActivity) return;
     sounds.playMicBeep();
     setIsRecording(true);
     setSpeechResult(null);
 
-    const targetPhrase = currentActivity.promptBisaya || currentActivity.prompt;
+    const targetPhrase = currentActivity.promptBisaya || currentActivity.prompt || 'Maayong buntag';
     const recognition = startSpeechRecognition(
       async (transcript) => {
         setIsRecording(false);
@@ -319,7 +364,7 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
       {/* Main Interactive Stage */}
       <div className="flex-1 overflow-y-auto p-5 flex flex-col justify-center space-y-6">
         {/* Flashcard Activity */}
-        {currentActivity.type === 'flashcard' && (
+        {currentActivity?.type === 'flashcard' && (
           <div className="space-y-4">
             <div
               onClick={() => {
@@ -335,12 +380,12 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
               {!isFlipped ? (
                 <div className="space-y-3">
                   <div className="text-xs text-teal-400 uppercase tracking-wider font-bold">
-                    {currentActivity.prompt}
+                    {currentActivity?.prompt || 'Lesson Core Concept'}
                   </div>
                   <div className="font-display text-2xl font-black text-white tracking-tight">
-                    {currentActivity.promptBisaya}
+                    {currentActivity?.promptBisaya || currentActivity?.prompt || 'Maayong adlaw'}
                   </div>
-                  {currentActivity.phonetics && (
+                  {currentActivity?.phonetics && (
                     <div className="text-xs font-mono text-stone-400">
                       Pronunciation: {currentActivity.phonetics}
                     </div>
@@ -375,9 +420,9 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
               ) : (
                 <div className="space-y-3">
                   <div className="text-sm font-bold text-stone-200">
-                    {currentActivity.explanation}
+                    {currentActivity?.explanation || 'Practice and master this communication expression.'}
                   </div>
-                  {currentActivity.culturalNote && (
+                  {currentActivity?.culturalNote && (
                     <div className="text-xs text-amber-300/90 bg-amber-950/40 border border-amber-800/50 p-3 rounded-2xl leading-relaxed text-left">
                       💡 <span className="font-bold">Cultural Etiquette:</span> {currentActivity.culturalNote}
                     </div>
@@ -393,17 +438,17 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
         )}
 
         {/* Multiple Choice Activity */}
-        {currentActivity.type === 'multiple_choice' && (
+        {currentActivity?.type === 'multiple_choice' && (
           <div className="space-y-4">
             <div className="space-y-2">
               <span className="text-[11px] uppercase tracking-wider text-teal-400 font-bold">
                 Listening & Comprehension Quiz
               </span>
               <h3 className="text-base font-black text-white leading-snug font-display">
-                {currentActivity.prompt}
+                {currentActivity?.prompt || 'Choose the correct answer:'}
               </h3>
 
-              {currentActivity.promptBisaya && (
+              {currentActivity?.promptBisaya && (
                 <div className="flex items-center gap-2 pt-1">
                   <button
                     onClick={() => handlePlayAudio(currentActivity.promptBisaya)}
@@ -417,9 +462,9 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
             </div>
 
             <div className="space-y-2.5 pt-2">
-              {currentActivity.options?.map((option, idx) => {
+              {currentActivity?.options?.map((option, idx) => {
                 const isSelected = selectedOption === idx;
-                const isCorrect = idx === currentActivity.correctAnswer;
+                const isCorrect = idx === currentActivity?.correctAnswer;
                 let btnStyle = 'bg-stone-900 border-2 border-stone-800 text-stone-200 hover:border-stone-700 btn-3d-dark';
 
                 if (feedback) {
@@ -450,26 +495,28 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
         )}
 
         {/* Pronunciation Drill Activity with Whisper */}
-        {currentActivity.type === 'pronunciation_drill' && (
+        {currentActivity?.type === 'pronunciation_drill' && (
           <div className="space-y-5 text-center">
             <div className="space-y-1.5">
               <span className="text-[11px] uppercase tracking-wider text-teal-400 font-bold">
                 Whisper Speech Pronunciation Drill
               </span>
               <div className="font-display text-2xl font-black text-white tracking-tight">
-                {currentActivity.promptBisaya}
+                {currentActivity?.promptBisaya || currentActivity?.prompt}
               </div>
-              <div className="text-xs font-mono text-stone-400">
-                {currentActivity.phonetics}
-              </div>
+              {currentActivity?.phonetics && (
+                <div className="text-xs font-mono text-stone-400">
+                  {currentActivity.phonetics}
+                </div>
+              )}
             </div>
 
             <p className="text-xs text-stone-400 max-w-xs mx-auto">
-              {currentActivity.prompt}
+              {currentActivity?.prompt}
             </p>
 
             <button
-              onClick={() => handlePlayAudio(currentActivity.promptBisaya)}
+              onClick={() => handlePlayAudio(currentActivity?.promptBisaya || currentActivity?.prompt)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-900 border border-stone-800 text-teal-300 text-xs font-bold hover:bg-stone-800"
             >
               <Volume2 className="w-3.5 h-3.5" />
@@ -524,14 +571,14 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
         )}
 
         {/* Sentence Assembly Activity */}
-        {currentActivity.type === 'sentence_assembly' && (
+        {currentActivity?.type === 'sentence_assembly' && (
           <div className="space-y-5">
             <div className="space-y-1">
               <span className="text-[11px] uppercase tracking-wider text-teal-400 font-bold">
                 Sentence Assembly
               </span>
               <h3 className="text-sm font-bold text-white font-display">
-                {currentActivity.prompt}
+                {currentActivity?.prompt || 'Assemble the correct phrase:'}
               </h3>
             </div>
 
@@ -554,7 +601,7 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
 
             {/* Word Bank */}
             <div className="flex flex-wrap gap-2 pt-1">
-              {currentActivity.options?.map((word, i) => {
+              {currentActivity?.options?.map((word, i) => {
                 const isUsed = assembledWords.includes(word);
                 return (
                   <button
@@ -631,7 +678,7 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
         </div>
       ) : (
         /* If no feedback yet and it's flashcard, show Next button */
-        currentActivity.type === 'flashcard' && (
+        currentActivity?.type === 'flashcard' && (
           <div className="p-4 border-t border-stone-800 bg-stone-950">
             <button
               onClick={handleNext}

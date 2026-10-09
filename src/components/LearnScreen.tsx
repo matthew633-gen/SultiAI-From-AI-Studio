@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { 
-  X, GraduationCap, Check, Share2, Sparkles, Trophy 
+  X, GraduationCap, Check, Share2, Sparkles, Trophy, Map, LayoutGrid 
 } from 'lucide-react';
 import { Module, Lesson, UserProfile } from '../types';
 import { CourseData, COURSES } from '../data/coursesData';
+import { LanguageJourneyMap } from './learn/LanguageJourneyMap';
 import { LearnDashboard } from './learn/LearnDashboard';
 import { CourseRoadmapView } from './learn/CourseRoadmapView';
 import { QuickPracticeModal } from './learn/QuickPracticeModal';
@@ -28,9 +29,10 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({
   onAddPracticeMinutes,
   onGoToProfile,
 }) => {
-  // Navigation View: 'dashboard' = "Where am I and what should I do next?"
-  //                  'course_view' = "What am I learning and what is my roadmap?"
-  const [currentView, setCurrentView] = useState<'dashboard' | 'course_view'>('dashboard');
+  // Navigation View: 'journey_map' = Game-like level map (Candy Crush / Duolingo style)
+  //                  'dashboard' = Summary overview & tutors
+  //                  'course_view' = Detailed syllabus roadmap
+  const [currentView, setCurrentView] = useState<'journey_map' | 'dashboard' | 'course_view'>('journey_map');
   const [selectedCourse, setSelectedCourse] = useState<CourseData>(COURSES[0]);
   const [activeQuickTool, setActiveQuickTool] = useState<string | null>(null);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
@@ -54,9 +56,59 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({
   };
 
   return (
-    <div className="pb-24 px-4 pt-1 max-w-md mx-auto select-none space-y-4">
+    <div className="pb-24 px-4 pt-1 max-w-md mx-auto select-none space-y-3">
+      
+      {/* View Switcher Bar (Language Journey Map vs Course Syllabus) */}
+      <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-[#11222D] rounded-2xl border border-stone-200/80 dark:border-white/10 shadow-2xs text-xs font-bold">
+        <button
+          onClick={() => {
+            sounds.playTap();
+            setCurrentView('journey_map');
+          }}
+          className={`flex-1 py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            currentView === 'journey_map'
+              ? 'bg-teal-600 text-white shadow-xs'
+              : 'text-stone-500 hover:text-stone-900 dark:hover:text-white'
+          }`}
+        >
+          <Map className="w-3.5 h-3.5" />
+          <span>Language Journey</span>
+        </button>
+
+        <button
+          onClick={() => {
+            sounds.playTap();
+            setCurrentView('dashboard');
+          }}
+          className={`flex-1 py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            currentView === 'dashboard'
+              ? 'bg-teal-600 text-white shadow-xs'
+              : 'text-stone-500 hover:text-stone-900 dark:hover:text-white'
+          }`}
+        >
+          <LayoutGrid className="w-3.5 h-3.5" />
+          <span>Curriculum Hub</span>
+        </button>
+      </div>
+
       {/* ========================================================================= */}
-      {/* 1. LEARN DASHBOARD ("Where am I and what should I do next?")              */}
+      {/* 1. PRIMARY EXPERIENCE: LANGUAGE JOURNEY GAME MAP                          */}
+      {/* ========================================================================= */}
+      {currentView === 'journey_map' && (
+        <LanguageJourneyMap
+          profile={profile}
+          completedLessons={completedLessons}
+          modules={modules}
+          onStartLesson={onStartLesson}
+          onOpenSulti={onOpenSulti}
+          onOpenQuickPractice={(toolId) => setActiveQuickTool(toolId)}
+          onOpenCertificateModal={() => setShowCertificateModal(true)}
+          onGoToProfile={onGoToProfile}
+        />
+      )}
+
+      {/* ========================================================================= */}
+      {/* 2. CURRICULUM HUB / DASHBOARD                                             */}
       {/* ========================================================================= */}
       {currentView === 'dashboard' && (
         <LearnDashboard
@@ -73,7 +125,7 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* 2. COURSE DETAIL & ROADMAP ("What am I learning and what is my roadmap?")  */}
+      {/* 3. COURSE DETAIL & ROADMAP ("What am I learning and what is my roadmap?")  */}
       {/* ========================================================================= */}
       {currentView === 'course_view' && (
         <CourseRoadmapView
@@ -88,7 +140,7 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* 3. INDEPENDENT QUICK PRACTICE MODAL (Voice, Scenarios, Flashcards, Phrasebook) */}
+      {/* 4. INDEPENDENT QUICK PRACTICE MODAL (Voice, Scenarios, Flashcards, Phrasebook) */}
       {/* ========================================================================= */}
       <QuickPracticeModal
         isOpen={Boolean(activeQuickTool)}
@@ -98,7 +150,7 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({
       />
 
       {/* ========================================================================= */}
-      {/* 4. VERIFIED ACADEMIC CREDENTIAL CERTIFICATE MODAL                         */}
+      {/* 5. VERIFIED ACADEMIC CREDENTIAL CERTIFICATE MODAL                         */}
       {/* ========================================================================= */}
       {showCertificateModal && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
@@ -134,39 +186,35 @@ export const LearnScreen: React.FC<LearnScreenProps> = ({
             <div className="bg-stone-50 dark:bg-[#152B37] rounded-2xl p-3.5 border border-stone-200 dark:border-white/10 text-left space-y-1.5 text-xs font-mono">
               <div className="flex justify-between text-stone-600 dark:text-stone-300">
                 <span>Curriculum:</span>
-                <span className="font-bold text-stone-900 dark:text-white">5 Modules · 10 Lessons</span>
+                <span className="font-bold text-stone-900 dark:text-white">8 Levels · 40 Challenges</span>
               </div>
               <div className="flex justify-between text-stone-600 dark:text-stone-300">
                 <span>Acoustic Accuracy:</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">92% Whisper Concordance</span>
+                <span className="font-bold text-teal-600 dark:text-teal-400">91.4% Whisper STT</span>
               </div>
               <div className="flex justify-between text-stone-600 dark:text-stone-300">
-                <span>Situational Fluency:</span>
-                <span className="font-bold text-indigo-600 dark:text-indigo-400">86% Conversational</span>
-              </div>
-              <div className="flex justify-between text-stone-600 dark:text-stone-300 pt-1 border-t border-stone-200 dark:border-white/10">
                 <span>Verification Code:</span>
-                <span className="font-mono text-[10px] font-bold text-stone-800 dark:text-stone-200">SULTI-JMC-2026-GD88</span>
+                <span className="font-bold text-stone-900 dark:text-white">SULTI-JMC-2026-GD88</span>
               </div>
             </div>
 
-            {/* Verification Actions */}
-            <div className="flex gap-2">
+            {/* Action Buttons */}
+            <div className="space-y-2 pt-2">
               <button
                 onClick={handleCopyCertCode}
-                className="flex-1 py-2.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+                className="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-98 transition-all"
               >
-                {copiedCert ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
-                <span>{copiedCert ? 'Copied Code!' : 'Copy Code'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  sounds.playTap();
-                  setShowCertificateModal(false);
-                }}
-                className="flex-1 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-black transition-all cursor-pointer active:scale-95"
-              >
-                Done
+                {copiedCert ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Copied Verification Code!</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-4 h-4" />
+                    <span>Copy Verification Credential</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

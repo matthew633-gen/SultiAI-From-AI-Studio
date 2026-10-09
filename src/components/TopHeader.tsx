@@ -62,16 +62,49 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  // Time-aware Bisaya greeting
+  const [activeLang, setActiveLang] = useState<'cebuano' | 'filipino' | 'english'>('cebuano');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sultiai_selected_language');
+      if (saved === 'filipino' || saved === 'english' || saved === 'cebuano') {
+        setActiveLang(saved);
+      }
+    }
+  }, []);
+
+  // Time-aware greeting supporting Cebuano, Filipino, and English journeys
   const getGreeting = () => {
     const hour = new Date().getHours();
     const name = userName.split(' ')[0] || 'Genesis';
+
+    if (activeLang === 'filipino') {
+      if (hour < 12) {
+        return { text: `Magandang umaga, ${name}! 👋`, subtext: 'Ready for your Filipino communication practice today?' };
+      } else if (hour < 18) {
+        return { text: `Magandang hapon, ${name}! 👋`, subtext: 'Ready for your Filipino communication practice today?' };
+      } else {
+        return { text: `Magandang gabi, ${name}! 👋`, subtext: 'Ready for your Filipino communication practice today?' };
+      }
+    }
+
+    if (activeLang === 'english') {
+      if (hour < 12) {
+        return { text: `Good morning, ${name}! 👋`, subtext: 'Ready for your English communication practice today?' };
+      } else if (hour < 18) {
+        return { text: `Good afternoon, ${name}! 👋`, subtext: 'Ready for your English communication practice today?' };
+      } else {
+        return { text: `Good evening, ${name}! 👋`, subtext: 'Ready for your English communication practice today?' };
+      }
+    }
+
+    // Default: Cebuano / Bisaya
     if (hour < 12) {
-      return { bisaya: `Maayong buntag, ${name} 👋`, english: 'Good morning' };
+      return { text: `Maayong buntag, ${name} 👋`, subtext: 'Ready for your Bisaya communication practice today?' };
     } else if (hour < 18) {
-      return { bisaya: `Maayong hapon, ${name} 👋`, english: 'Good afternoon' };
+      return { text: `Maayong hapon, ${name} 👋`, subtext: 'Ready for your Bisaya communication practice today?' };
     } else {
-      return { bisaya: `Maayong gabii, ${name} 👋`, english: 'Good evening' };
+      return { text: `Maayong gabii, ${name} 👋`, subtext: 'Ready for your Bisaya communication practice today?' };
     }
   };
 
@@ -80,7 +113,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   const handlePlayAudio = async () => {
     setIsPlayingGreeting(true);
     sounds.playTap();
-    await speakBisaya(greeting.bisaya.replace('👋', ''));
+    await speakBisaya(greeting.text.replace('👋', ''));
     setIsPlayingGreeting(false);
   };
 
@@ -255,14 +288,14 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-teal-600 dark:bg-teal-400 animate-pulse shrink-0" />
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[9.5px] font-mono font-black uppercase tracking-wider bg-teal-50 dark:bg-teal-950/80 text-teal-900 dark:text-teal-200 border border-teal-200 dark:border-teal-800 shrink-0">
-                    Bisaya Journey
+                    {activeLang === 'filipino' ? '🇵🇭 Filipino Journey' : activeLang === 'english' ? '🌎 English Journey' : '🇵🇭 Bisaya Journey'}
                   </span>
                 </div>
                 <h1 className="font-display font-black text-lg sm:text-xl text-stone-950 dark:text-white tracking-tight leading-snug break-words">
-                  {greeting.bisaya}
+                  {greeting.text}
                 </h1>
                 <p className="text-xs sm:text-[13px] text-stone-750 dark:text-stone-200 font-medium leading-relaxed">
-                  Ready for your Bisaya communication practice today?
+                  {greeting.subtext}
                 </p>
               </div>
 

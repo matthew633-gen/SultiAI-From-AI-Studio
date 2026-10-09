@@ -38,28 +38,29 @@ export const QuickPracticeRow: React.FC<QuickPracticeRowProps> = ({
             sounds.playTap();
             onStartVoice();
           }}
-          className="p-3 bg-white dark:bg-[#11222D] hover:bg-stone-50 dark:hover:bg-[#152B37] rounded-2xl border border-blue-200/70 dark:border-blue-500/30 text-left transition-all active:scale-[0.97] cursor-pointer shadow-2xs group flex flex-col justify-between min-h-[92px] relative overflow-hidden"
+          className="p-3 bg-white dark:bg-[#11222D] hover:bg-stone-50 dark:hover:bg-[#152B37] rounded-2xl border border-blue-300 dark:border-blue-500/40 text-left transition-all active:scale-[0.97] cursor-pointer shadow-xs group flex flex-col justify-between min-h-[96px] relative overflow-hidden"
         >
           {/* Subtle Accent Glow */}
-          <div className="absolute top-0 right-0 w-12 h-12 bg-blue-500/5 dark:bg-blue-400/10 rounded-full blur-xl pointer-events-none" />
+          <div className="absolute top-0 right-0 w-12 h-12 bg-blue-500/10 dark:bg-blue-400/15 rounded-full blur-xl pointer-events-none" />
 
           <div className="flex items-start justify-between w-full">
             <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-500/30 flex items-center justify-center font-bold group-hover:scale-105 transition-transform shadow-2xs">
               <Mic className="w-4 h-4" />
             </div>
-            <span className="text-[8.5px] font-black uppercase font-mono px-1.5 py-0.5 rounded-md bg-blue-100/80 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-700/40 tracking-wider">
-              Path
+            <span className="text-[8px] font-black uppercase font-mono px-1.5 py-0.5 rounded-md bg-gradient-to-r from-blue-600 to-teal-600 text-white shadow-2xs tracking-wider">
+              2 Paths
             </span>
           </div>
 
-          <div className="mt-2">
+          <div className="mt-1.5">
             <div className="font-display font-black text-xs text-stone-900 dark:text-white leading-tight flex items-center gap-1">
               <span>Voice Path</span>
             </div>
-            <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold mt-0.5 flex items-center gap-1">
-              <span>Lv. {voiceLevel}</span>
-              <span>•</span>
-              <span>{voiceBadgesCount > 0 ? `${voiceBadgesCount} Badges` : 'Badges'}</span>
+            <div className="text-[9.5px] text-blue-600 dark:text-blue-400 font-bold mt-0.5 flex items-center gap-1">
+              <span>Bisaya · Filipino</span>
+            </div>
+            <div className="text-[9px] text-stone-400 dark:text-stone-500 font-mono font-medium">
+              Lv. 1–5 (Hard)
             </div>
           </div>
         </button>

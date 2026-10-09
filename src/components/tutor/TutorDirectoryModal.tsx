@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  X, Search, Filter, ShieldCheck, MapPin, Star, UserPlus, 
+  X, Search, Filter, ShieldCheck, MapPin, Star, 
   MessageSquare, ExternalLink, Sparkles, Check, Briefcase, 
   ChevronRight, ArrowUpRight, Clock, Info, BookOpen
 } from 'lucide-react';
@@ -97,17 +97,6 @@ export const TutorDirectoryModal: React.FC<TutorDirectoryModalProps> = ({
             <button
               onClick={() => {
                 sounds.playTap();
-                setShowApplyModal(true);
-              }}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs transition-colors shadow-2xs cursor-pointer"
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>Become a Tutor</span>
-            </button>
-
-            <button
-              onClick={() => {
-                sounds.playTap();
                 onClose();
               }}
               className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-500 dark:text-stone-300 flex items-center justify-center transition-colors cursor-pointer"
@@ -178,37 +167,24 @@ export const TutorDirectoryModal: React.FC<TutorDirectoryModalProps> = ({
             </button>
           </div>
 
-          {/* Search box & Mobile Become a Tutor CTA */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Pangita pinaagi sa ngalan, dialect, o hilisgutan..."
-                className="w-full pl-8 pr-3 py-1.5 bg-stone-100 dark:bg-stone-800 rounded-xl text-xs text-stone-900 dark:text-white placeholder-stone-400 border border-stone-200/60 dark:border-white/5 focus:outline-none focus:ring-1 focus:ring-teal-500 font-medium"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-2 text-stone-400 hover:text-stone-600 text-xs"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-
-            <button
-              onClick={() => {
-                sounds.playTap();
-                setShowApplyModal(true);
-              }}
-              className="sm:hidden flex items-center gap-1 px-3 py-1.5 rounded-xl bg-teal-600 text-white font-bold text-xs shrink-0 cursor-pointer"
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>Apply</span>
-            </button>
+          {/* Search box */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Pangita pinaagi sa ngalan, dialect, o hilisgutan..."
+              className="w-full pl-8 pr-3 py-1.5 bg-stone-100 dark:bg-stone-800 rounded-xl text-xs text-stone-900 dark:text-white placeholder-stone-400 border border-stone-200/60 dark:border-white/5 focus:outline-none focus:ring-1 focus:ring-teal-500 font-medium"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-2 text-stone-400 hover:text-stone-600 text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            )}
           </div>
         </div>
 
@@ -414,16 +390,13 @@ export const TutorDirectoryModal: React.FC<TutorDirectoryModalProps> = ({
             </span>
           </div>
 
-          <button
-            onClick={() => {
-              sounds.playTap();
-              setShowApplyModal(true);
-            }}
+          <a
+            href="mailto:genesis.diaz@jmc.edu.ph?subject=SultiAI%20Academic%20Tutor%20%26%20Research%20Collaboration"
             className="text-[11px] font-bold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer"
           >
-            <span>Apply as Tutor</span>
+            <span>Partner / Contact Developer</span>
             <ChevronRight className="w-3 h-3" />
-          </button>
+          </a>
         </div>
       </div>
 

@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Mic, MicOff, Volume2, Sparkles, Trophy, Award, CheckCircle2, 
   Lock, ArrowRight, RotateCcw, Flame, Gem, ShieldCheck, ChevronRight, 
-  Play, MessageSquare, Star, Info, Zap
+  Play, MessageSquare, Star, Info, Zap, AlertCircle
 } from 'lucide-react';
 import { 
-  VoiceLevel, VoiceBadge, VoiceChallenge, VoiceUserProgress, 
-  VOICE_LEVELS, getStoredVoiceProgress, saveVoiceProgress 
+  VoiceLevel, VoiceBadge, VoiceChallenge, VoiceUserProgress, VoiceLanguageCategory,
+  VOICE_LEVELS_BY_CATEGORY, getVoiceLevelsForCategory, getStoredVoiceProgress, saveVoiceProgress 
 } from '../../data/voiceGamificationData';
 import { speakBisaya, startSpeechRecognition } from '../../utils/audio';
 import { sounds } from '../../utils/soundEffects';
@@ -27,8 +27,27 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
   onOpenSultiChat,
   targetDialect = 'davao_bisaya',
 }) => {
+  // Category Selection: Cebuano/Bisaya vs Filipino/Tagalog vs English
+  const [selectedCategory, setSelectedCategory] = useState<VoiceLanguageCategory>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sultiai_selected_language');
+      if (saved === 'filipino' || saved === 'english' || saved === 'cebuano') {
+        return saved;
+      }
+    }
+    return 'cebuano';
+  });
   const [activeTab, setActiveTab] = useState<'path' | 'arena' | 'badges'>('path');
-  const [progress, setProgress] = useState<VoiceUserProgress>(getStoredVoiceProgress);
+  const [progress, setProgress] = useState<VoiceUserProgress>(() => {
+    let initialCat: VoiceLanguageCategory = 'cebuano';
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sultiai_selected_language');
+      if (saved === 'filipino' || saved === 'english' || saved === 'cebuano') {
+        initialCat = saved;
+      }
+    }
+    return getStoredVoiceProgress(initialCat);
+  });
   const [selectedLevelId, setSelectedLevelId] = useState<number>(1);
   const [currentChallengeIndex, setCurrentChallengeIndex] = useState<number>(0);
 
@@ -44,16 +63,26 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
   // Badge Celebration Modal State
   const [unlockedBadge, setUnlockedBadge] = useState<VoiceBadge | null>(null);
 
-  // Load progress when modal opens
+  const levels = getVoiceLevelsForCategory(selectedCategory);
+
+  // Load progress when modal opens or category changes
   useEffect(() => {
     if (isOpen) {
-      const current = getStoredVoiceProgress();
+      let activeCat = selectedCategory;
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('sultiai_selected_language');
+        if ((saved === 'filipino' || saved === 'english' || saved === 'cebuano') && saved !== selectedCategory) {
+          activeCat = saved;
+          setSelectedCategory(saved);
+        }
+      }
+      const current = getStoredVoiceProgress(activeCat);
       setProgress(current);
-      setSelectedLevelId(Math.min(current.unlockedLevel, 5));
+      setSelectedLevelId(Math.min(current.unlockedLevel, getVoiceLevelsForCategory(activeCat).length));
     }
-  }, [isOpen]);
+  }, [isOpen, selectedCategory]);
 
-  // Clean up audio / speech on unmount or tab switch
+  // Clean up audio / speech on unmount
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
@@ -65,10 +94,23 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
 
   if (!isOpen) return null;
 
-  const selectedLevel = VOICE_LEVELS.find((l) => l.id === selectedLevelId) || VOICE_LEVELS[0];
+  const selectedLevel = levels.find((l) => l.id === selectedLevelId) || levels[0];
   const activeChallenge = selectedLevel.challenges[currentChallengeIndex] || selectedLevel.challenges[0];
 
-  // Helper to play Bisaya pronunciation
+  const handleCategoryChange = (cat: VoiceLanguageCategory) => {
+    sounds.playTap();
+    setSelectedCategory(cat);
+    const catProgress = getStoredVoiceProgress(cat);
+    setProgress(catProgress);
+    setSelectedLevelId(Math.min(catProgress.unlockedLevel, 5));
+    setCurrentChallengeIndex(0);
+    setSpeechTranscript(null);
+    setSpeechScore(null);
+    setSpeechFeedback(null);
+    setChallengePassed(false);
+  };
+
+  // Helper to play audio pronunciation
   const handlePlayAudio = async (text: string) => {
     if (isPlayingAudio) return;
     setIsPlayingAudio(true);
@@ -95,8 +137,7 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
       }
     });
 
-    const ratio = matchCount / eWords.length;
-    // Map ratio to realistic 78-96% range
+    const ratio = matchCount / Math.max(eWords.length, 1);
     return Math.min(99, Math.round(74 + ratio * 24));
   };
 
@@ -122,7 +163,7 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
       (result) => {
         setIsListening(false);
         setSpeechTranscript(result);
-        const score = evaluateSpeech(result, activeChallenge.phraseBisaya);
+        const score = evaluateSpeech(result, activeChallenge.phraseNative);
         setSpeechScore(score);
 
         const passed = score >= selectedLevel.minAccuracy;
@@ -130,18 +171,26 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
 
         if (passed) {
           sounds.playCorrect();
-          setSpeechFeedback('Maayo kaayo! Insakto ug hapsay ang imong paglitok sa Bisaya.');
+          setSpeechFeedback(
+            selectedCategory === 'cebuano'
+              ? 'Maayo kaayo! Insakto ug hapsay ang imong paglitok sa Bisaya.'
+              : 'Napakagaling! Wasto at natural ang iyong pagbigkas sa Filipino.'
+          );
           handleMarkChallengePassed(activeChallenge.id, score);
         } else {
           sounds.playWrong();
-          setSpeechFeedback(`Hapit na maabot! Kinahanglan ug ${selectedLevel.minAccuracy}% concordance. Sulayi pag-usab.`);
+          setSpeechFeedback(
+            selectedCategory === 'cebuano'
+              ? `Hapit na maabot! Kinahanglan og ${selectedLevel.minAccuracy}% concordance. Sulayi pag-usab.`
+              : `Malapit na! Kailangan ng ${selectedLevel.minAccuracy}% concordance. Subukan muli.`
+          );
         }
       },
       (error) => {
         setIsListening(false);
-        // Fallback for browsers without speech recognition
+        // Fallback for environments without speech recognition
         const fallbackScore = Math.floor(Math.random() * 8) + 88;
-        setSpeechTranscript(activeChallenge.phraseBisaya);
+        setSpeechTranscript(activeChallenge.phraseNative);
         setSpeechScore(fallbackScore);
         const passed = fallbackScore >= selectedLevel.minAccuracy;
         setChallengePassed(passed);
@@ -178,7 +227,6 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
     let updatedCompletedLevels = progress.completedLevels;
     let updatedUnlockedLevel = progress.unlockedLevel;
     let updatedBadges = progress.earnedBadges;
-    let earnedXpThisLevel = 25;
 
     if (hasCompletedAll && !isLevelAlreadyCompleted) {
       updatedCompletedLevels = [...progress.completedLevels, selectedLevel.id];
@@ -186,23 +234,20 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
       
       if (!updatedBadges.includes(selectedLevel.badge.id)) {
         updatedBadges = [...updatedBadges, selectedLevel.badge.id];
-        // Trigger Badge celebration!
         setUnlockedBadge(selectedLevel.badge);
         sounds.playFanfare();
 
-        // Dispatch real Achievement notification
         addNotification({
           category: 'achievement',
           title: `🏆 New Voice Badge: ${selectedLevel.badge.name}!`,
-          titleBisaya: `Bag-ong Pasidungog: ${selectedLevel.badge.nameBisaya}`,
-          message: `Nalampos nimo ang ${selectedLevel.titleBisaya} nga adunay ${score}% Whisper concordance score. Nakadawat ka og +${selectedLevel.badge.xpReward} XP ug +${selectedLevel.badge.gemsReward} Bahandi Gems!`,
+          titleBisaya: `Bag-ong Pasidungog: ${selectedLevel.badge.nameNative}`,
+          message: `Nalampos nimo ang ${selectedLevel.titleNative} nga adunay ${score}% Whisper concordance score. Nakadawat ka og +${selectedLevel.badge.xpReward} XP ug +${selectedLevel.badge.gemsReward} Bahandi Gems!`,
           actionLabel: 'Tan-awa ang Badges',
           actionType: 'profile',
           iconType: 'trophy',
         });
       }
 
-      earnedXpThisLevel = selectedLevel.badge.xpReward;
       if (onAwardReward) {
         onAwardReward(selectedLevel.badge.xpReward, selectedLevel.badge.gemsReward, score);
       }
@@ -218,15 +263,14 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
       completedLevels: updatedCompletedLevels,
       unlockedLevel: updatedUnlockedLevel,
       earnedBadges: updatedBadges,
-      totalVoiceXp: progress.totalVoiceXp + earnedXpThisLevel,
+      totalVoiceXp: progress.totalVoiceXp + 25,
       highestAccuracy: Math.max(progress.highestAccuracy, score),
     };
 
     setProgress(updatedProgress);
-    saveVoiceProgress(updatedProgress);
+    saveVoiceProgress(updatedProgress, selectedCategory);
   };
 
-  // Next Challenge or Replay
   const handleNextChallenge = () => {
     sounds.playTap();
     setSpeechTranscript(null);
@@ -235,10 +279,10 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
     setChallengePassed(false);
 
     if (currentChallengeIndex < selectedLevel.challenges.length - 1) {
-      setCurrentChallengeIndex(currentChallengeIndex + 1);
+      setCurrentChallengeIndex((prev) => prev + 1);
     } else {
-      // Completed all challenges in level! Go back to path or next level
-      if (selectedLevel.id < 5 && progress.unlockedLevel > selectedLevel.id) {
+      // Completed all challenges in level! Advance or go to path
+      if (selectedLevel.id < levels.length && progress.unlockedLevel > selectedLevel.id) {
         setSelectedLevelId(selectedLevel.id + 1);
         setCurrentChallengeIndex(0);
       } else {
@@ -262,20 +306,20 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200 select-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-md max-h-[92vh] sm:max-h-[88vh] bg-stone-50 dark:bg-[#0e1b24] text-stone-900 dark:text-stone-100 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200/90 dark:border-white/10 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-250">
+      <div className="w-full max-w-md max-h-[94vh] sm:max-h-[88vh] bg-stone-50 dark:bg-[#0e1b24] text-stone-900 dark:text-stone-100 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200/90 dark:border-white/10 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-250">
         
-        {/* Mobile Swipe / Drag Handle */}
+        {/* Mobile Drag Indicator */}
         <div className="flex sm:hidden justify-center pt-2.5 pb-1 shrink-0">
           <div className="w-10 h-1 rounded-full bg-stone-300 dark:bg-stone-700" />
         </div>
 
         {/* HEADER SECTION */}
-        <div className="px-4 py-3 bg-white dark:bg-[#11222D] border-b border-stone-200/90 dark:border-white/10 shrink-0">
+        <div className="px-4 py-3 bg-white dark:bg-[#11222D] border-b border-stone-200/90 dark:border-white/10 shrink-0 space-y-2.5">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-teal-500 text-white flex items-center justify-center shrink-0 shadow-md">
@@ -284,10 +328,10 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <h2 className="font-display font-black text-sm text-stone-900 dark:text-white truncate">
-                    Dalang Tingog
+                    Voice Learning Path
                   </h2>
                   <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase font-mono tracking-wider bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
-                    Voice Path
+                    Acoustic AI
                   </span>
                 </div>
                 <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
@@ -302,52 +346,73 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
                 onClose();
               }}
               className="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
-              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Quick Voice Stats Strip */}
-          <div className="mt-2.5 pt-2 border-t border-stone-100 dark:border-white/5 grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="py-1 px-1.5 bg-stone-100 dark:bg-white/5 rounded-xl">
-              <div className="text-[10px] text-stone-400 dark:text-stone-500 font-bold uppercase">Voice XP</div>
-              <div className="font-black font-mono text-xs text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1">
-                <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                <span>+{progress.totalVoiceXp}</span>
-              </div>
+          {/* MAJOR LANGUAGE CATEGORY SELECTOR (Cebuano/Bisaya vs Filipino vs English) */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-[11px] font-mono text-stone-500 dark:text-stone-400">
+              <span className="font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400">
+                1. Choose Target Language:
+              </span>
+              <span className="text-[10px]">Non-Native & Foreigner Path</span>
             </div>
 
-            <div className="py-1 px-1.5 bg-stone-100 dark:bg-white/5 rounded-xl">
-              <div className="text-[10px] text-stone-400 dark:text-stone-500 font-bold uppercase">Accuracy</div>
-              <div className="font-black font-mono text-xs text-teal-600 dark:text-teal-400">
-                {progress.highestAccuracy}%
-              </div>
-            </div>
+            <div className="grid grid-cols-3 gap-1 p-1 bg-stone-100 dark:bg-stone-900/80 rounded-2xl border border-stone-200/70 dark:border-white/5 text-xs font-bold">
+              <button
+                onClick={() => handleCategoryChange('cebuano')}
+                className={`py-2 px-1.5 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer text-center ${
+                  selectedCategory === 'cebuano'
+                    ? 'bg-teal-600 text-white shadow-xs'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
+                }`}
+              >
+                <span>🇵🇭</span>
+                <span className="truncate">Cebuano</span>
+              </button>
 
-            <div className="py-1 px-1.5 bg-stone-100 dark:bg-white/5 rounded-xl">
-              <div className="text-[10px] text-stone-400 dark:text-stone-500 font-bold uppercase">Badges</div>
-              <div className="font-black font-mono text-xs text-purple-600 dark:text-purple-400 flex items-center justify-center gap-1">
-                <Trophy className="w-3 h-3" />
-                <span>{progress.earnedBadges.length} / 5</span>
-              </div>
+              <button
+                onClick={() => handleCategoryChange('filipino')}
+                className={`py-2 px-1.5 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer text-center ${
+                  selectedCategory === 'filipino'
+                    ? 'bg-teal-600 text-white shadow-xs'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
+                }`}
+              >
+                <span>🇵🇭</span>
+                <span className="truncate">Filipino</span>
+              </button>
+
+              <button
+                onClick={() => handleCategoryChange('english')}
+                className={`py-2 px-1.5 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer text-center ${
+                  selectedCategory === 'english'
+                    ? 'bg-teal-600 text-white shadow-xs'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
+                }`}
+              >
+                <span>🌎</span>
+                <span className="truncate">English</span>
+              </button>
             </div>
           </div>
 
           {/* Navigation Sub-Tabs */}
-          <div className="mt-2.5 flex items-center gap-1 p-0.5 bg-stone-100 dark:bg-stone-900/80 rounded-xl border border-stone-200/80 dark:border-white/5">
+          <div className="flex items-center gap-1 p-0.5 bg-stone-100 dark:bg-stone-900/80 rounded-xl border border-stone-200/80 dark:border-white/5">
             <button
               onClick={() => {
                 sounds.playTap();
                 setActiveTab('path');
               }}
-              className={`flex-1 min-h-[34px] py-1 px-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex-1 min-h-[32px] py-1 px-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'path'
-                  ? 'bg-white dark:bg-[#152B37] text-stone-900 dark:text-white shadow-xs border border-stone-200/80 dark:border-teal-500/30'
+                  ? 'bg-white dark:bg-[#152B37] text-stone-900 dark:text-white shadow-xs'
                   : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
               }`}
             >
-              <span>🗺️ Roadmap Path</span>
+              <span>🗺️ Learning Path</span>
             </button>
 
             <button
@@ -355,16 +420,13 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
                 sounds.playTap();
                 setActiveTab('arena');
               }}
-              className={`flex-1 min-h-[34px] py-1 px-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex-1 min-h-[32px] py-1 px-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'arena'
-                  ? 'bg-white dark:bg-[#152B37] text-stone-900 dark:text-white shadow-xs border border-stone-200/80 dark:border-teal-500/30'
+                  ? 'bg-white dark:bg-[#152B37] text-stone-900 dark:text-white shadow-xs'
                   : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
               }`}
             >
-              <span>🎙️ Voice Arena</span>
-              {selectedLevel && (
-                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              )}
+              <span>🎙️ Voice Arena (Lv. {selectedLevel.id})</span>
             </button>
 
             <button
@@ -372,13 +434,13 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
                 sounds.playTap();
                 setActiveTab('badges');
               }}
-              className={`flex-1 min-h-[34px] py-1 px-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex-1 min-h-[32px] py-1 px-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'badges'
-                  ? 'bg-white dark:bg-[#152B37] text-stone-900 dark:text-white shadow-xs border border-stone-200/80 dark:border-teal-500/30'
+                  ? 'bg-white dark:bg-[#152B37] text-stone-900 dark:text-white shadow-xs'
                   : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
               }`}
             >
-              <span>🏆 Badges ({progress.earnedBadges.length})</span>
+              <span>🏆 Badges</span>
             </button>
           </div>
         </div>
@@ -386,31 +448,38 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
         {/* MODAL BODY (SCROLLABLE) */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4">
           
-          {/* TAB 1: ROADMAP PATH VIEW */}
+          {/* TAB 1: LEARNING PATH VIEW (ROADMAP WITH EASY, MEDIUM & HARD LEVELS) */}
           {activeTab === 'path' && (
             <div className="space-y-4">
               <div className="p-3 bg-gradient-to-r from-blue-500/10 via-teal-500/10 to-indigo-500/10 dark:from-blue-950/40 dark:via-teal-950/40 dark:to-indigo-950/40 rounded-2xl border border-blue-200/60 dark:border-blue-500/20 text-xs">
                 <div className="font-display font-black text-xs text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                  Voice Mastery Gamification Journey
+                  <span>{selectedCategory === 'cebuano' ? 'Cebuano / Bisaya' : 'Filipino / Tagalog'} Voice Learning Path</span>
                 </div>
                 <p className="text-stone-600 dark:text-stone-400 mt-1 text-[11px] leading-relaxed">
-                  Litoka ang kada hugpong sa pulong gamit ang mikropono. Matag lebel nga imong makompleto, maka-unlock ka og exclusive <strong>Bisaya Voice Badge</strong> ug XP!
+                  Solve every level by speaking clearly into the microphone. You must master each level to unlock the next — <strong>Hard difficulty challenges await in Levels 4 & 5!</strong>
                 </p>
               </div>
 
               {/* Stepper Roadmap Journey */}
               <div className="space-y-3 relative before:absolute before:top-6 before:bottom-6 before:left-6 before:w-0.5 before:bg-stone-200 dark:before:bg-stone-800">
-                {VOICE_LEVELS.map((level) => {
+                {levels.map((level) => {
                   const isCompleted = progress.completedLevels.includes(level.id);
                   const isUnlocked = level.id <= progress.unlockedLevel;
                   const isCurrent = level.id === progress.unlockedLevel;
                   const hasBadge = progress.earnedBadges.includes(level.badge.id);
 
-                  // Count passed challenges in this level
-                  const passedInThisLevel = level.challenges.filter((c) => 
+                  const passedCount = level.challenges.filter((c) => 
                     progress.completedChallenges.includes(c.id)
                   ).length;
+
+                  // Difficulty styling
+                  const diffColor = 
+                    level.difficulty === 'Hard'
+                      ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border-rose-300 dark:border-rose-700'
+                      : level.difficulty === 'Medium'
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                      : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700';
 
                   return (
                     <div 
@@ -445,62 +514,44 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
                       </div>
 
                       {/* Level Information */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center justify-between gap-1 flex-wrap">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-display font-black text-xs text-stone-900 dark:text-white truncate">
+                            <h3 className="font-display font-black text-xs text-stone-900 dark:text-white">
                               {level.title}
-                            </span>
-                            {isCurrent && (
-                              <span className="px-1.5 py-0.2 rounded text-[8.5px] font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                                ACTIVE
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-1">
-                            <span className="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400">
-                              +{level.badge.xpReward} XP
+                            </h3>
+                            <span className={`text-[9px] font-mono font-black uppercase px-1.5 py-0.2 rounded border ${diffColor}`}>
+                              {level.difficulty}
                             </span>
                           </div>
+
+                          <span className="text-[10px] font-mono font-bold text-stone-400">
+                            Min {level.minAccuracy}% WER
+                          </span>
                         </div>
 
-                        <div className="text-[11px] font-bold text-stone-600 dark:text-stone-300 mt-0.5">
-                          {level.titleBisaya}
-                        </div>
-
-                        <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-0.5 line-clamp-2">
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-1">
                           {level.subtitle}
                         </p>
 
-                        {/* Badge Preview & Progress */}
-                        <div className="mt-2.5 pt-2 border-t border-stone-100 dark:border-white/5 flex items-center justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-1.5 text-[10px]">
-                            <span className="text-base">{level.badge.icon}</span>
-                            <span className={`font-bold ${hasBadge ? 'text-purple-600 dark:text-purple-400' : 'text-stone-400 dark:text-stone-500'}`}>
-                              {level.badge.nameBisaya}
-                            </span>
-                          </div>
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[10px] font-mono text-stone-400">
+                            Progress: {passedCount} / {level.challenges.length} drills
+                          </span>
 
                           {isUnlocked ? (
                             <button
                               onClick={() => handleSelectLevelFromPath(level)}
-                              className={`px-3 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
-                                isCurrent
-                                  ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                                  : isCompleted
-                                  ? 'bg-stone-100 hover:bg-stone-200 dark:bg-white/10 dark:hover:bg-white/20 text-stone-700 dark:text-stone-200'
-                                  : 'bg-teal-600 hover:bg-teal-500 text-white'
-                              }`}
+                              className="px-2.5 py-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold flex items-center gap-1 shadow-2xs active:scale-95 transition-all cursor-pointer"
                             >
-                              <span>{isCompleted ? 'Praktis Pag-usab' : `Magsugod (${passedInThisLevel}/3)`}</span>
-                              <ArrowRight className="w-3 h-3" />
+                              <span>{isCompleted ? 'Practice Again' : 'Enter Arena'}</span>
+                              <ChevronRight className="w-3 h-3" />
                             </button>
                           ) : (
-                            <div className="text-[10px] text-stone-400 flex items-center gap-1 font-medium">
-                              <Lock className="w-3 h-3" />
-                              <span>Lamposa ang Level {level.id - 1}</span>
-                            </div>
+                            <span className="text-[10px] font-mono text-stone-400 flex items-center gap-1">
+                              <Lock className="w-2.5 h-2.5" />
+                              <span>Pass Level {level.id - 1} First</span>
+                            </span>
                           )}
                         </div>
                       </div>
@@ -511,333 +562,167 @@ export const VoicePathModal: React.FC<VoicePathModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: LIVE VOICE ARENA (INTERACTIVE SPEECH ENGINE) */}
+          {/* TAB 2: VOICE ARENA PRACTICE */}
           {activeTab === 'arena' && (
             <div className="space-y-4">
-              {/* Level Selector Header */}
-              <div className="p-3 bg-white dark:bg-[#11222D] rounded-2xl border border-stone-200/90 dark:border-white/10 flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="text-[10px] font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 font-bold">
-                    {selectedLevel.titleBisaya}
+              {/* Active Level Header Banner */}
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#11222D] border border-stone-200/90 dark:border-white/10 shadow-xs flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-black uppercase text-stone-400">
+                      Level {selectedLevel.id} of {levels.length}
+                    </span>
+                    <span className="text-[9px] font-mono font-black uppercase px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                      {selectedLevel.difficulty} Difficulty
+                    </span>
                   </div>
-                  <div className="font-display font-black text-xs text-stone-900 dark:text-white truncate">
-                    Challenge {currentChallengeIndex + 1} of {selectedLevel.challenges.length}
-                  </div>
+                  <h3 className="font-display font-black text-sm text-stone-900 dark:text-white">
+                    {selectedLevel.title}
+                  </h3>
                 </div>
 
-                {/* Stepper Indicators */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {selectedLevel.challenges.map((c, idx) => {
-                    const isDone = progress.completedChallenges.includes(c.id);
-                    const isCurrentChallenge = idx === currentChallengeIndex;
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() => {
-                          sounds.playTap();
-                          setCurrentChallengeIndex(idx);
-                          setSpeechTranscript(null);
-                          setSpeechScore(null);
-                          setSpeechFeedback(null);
-                          setChallengePassed(false);
-                        }}
-                        className={`w-6 h-6 rounded-lg text-[10px] font-bold flex items-center justify-center transition-all cursor-pointer ${
-                          isDone
-                            ? 'bg-emerald-500 text-white'
-                            : isCurrentChallenge
-                            ? 'bg-blue-600 text-white ring-2 ring-blue-400'
-                            : 'bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400'
-                        }`}
-                      >
-                        {isDone ? '✓' : idx + 1}
-                      </button>
-                    );
-                  })}
+                <div className="text-right font-mono text-[11px]">
+                  <span className="text-stone-400 block">Drill</span>
+                  <span className="font-black text-blue-600 dark:text-blue-400">
+                    {currentChallengeIndex + 1} / {selectedLevel.challenges.length}
+                  </span>
                 </div>
               </div>
 
-              {/* CHALLENGE CARD */}
-              <div className="p-4 bg-white dark:bg-[#11222D] rounded-3xl border border-stone-200/90 dark:border-white/10 shadow-sm space-y-3">
-                {/* Target Bisaya Phrase */}
+              {/* Challenge Audio & Card */}
+              <div className="p-5 rounded-3xl bg-white dark:bg-[#11222D] border border-stone-200/90 dark:border-white/10 shadow-sm space-y-4 text-center">
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-stone-400 dark:text-stone-500 font-bold">
-                      Target Phrase ({targetDialect === 'davao_bisaya' ? 'Davao Bisaya' : 'Standard Bisaya'})
-                    </span>
-                    <span className="text-[10px] font-bold text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/70 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-500/20">
-                      Goal: ≥{selectedLevel.minAccuracy}%
-                    </span>
-                  </div>
-
-                  <h3 className="font-display font-black text-lg sm:text-xl text-stone-900 dark:text-white leading-snug">
-                    "{activeChallenge.phraseBisaya}"
-                  </h3>
-
-                  <p className="text-xs text-stone-500 dark:text-stone-400 font-medium">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-teal-800 dark:text-teal-300 font-bold bg-teal-50 dark:bg-teal-950/80 px-2 py-0.5 rounded-full border border-teal-200/60 dark:border-teal-700">
+                    Target Speech Phrase
+                  </span>
+                  <h2 className="font-display font-black text-xl text-stone-900 dark:text-white pt-1">
+                    "{activeChallenge.phraseNative}"
+                  </h2>
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {activeChallenge.phraseEnglish}
                   </p>
                 </div>
 
-                {/* Phonetic Pronunciation Guide */}
-                <div className="p-2.5 bg-stone-100 dark:bg-stone-900/60 rounded-2xl border border-stone-200/60 dark:border-white/5 space-y-1 text-xs">
-                  <div className="text-[10px] text-stone-400 dark:text-stone-500 font-mono font-bold uppercase">
-                    Phonetic Guide
-                  </div>
-                  <div className="font-mono text-[11px] text-blue-700 dark:text-blue-300 font-bold">
-                    {activeChallenge.phoneticGuide}
-                  </div>
-                  <div className="text-[10px] text-stone-500 dark:text-stone-400 flex items-center gap-1 pt-0.5">
-                    <Info className="w-3 h-3 text-stone-400 shrink-0" />
-                    <span>{activeChallenge.contextTip}</span>
-                  </div>
+                {/* Phonetic Syllables */}
+                <div className="p-2.5 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/60 dark:border-white/5 font-mono text-xs text-stone-700 dark:text-stone-300 flex items-center justify-center gap-2">
+                  <Volume2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <span>{activeChallenge.phoneticGuide}</span>
                 </div>
 
-                {/* Audio Listen & Speech Actions */}
-                <div className="pt-2 grid grid-cols-2 gap-2.5">
-                  {/* Listen button */}
-                  <button
-                    onClick={() => handlePlayAudio(activeChallenge.phraseBisaya)}
-                    disabled={isPlayingAudio}
-                    className={`min-h-[46px] py-2 px-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border ${
-                      isPlayingAudio
-                        ? 'bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-blue-300'
-                        : 'bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-800 dark:text-stone-200 border-stone-200/80 dark:border-white/10'
-                    }`}
-                  >
-                    <Volume2 className={`w-4 h-4 ${isPlayingAudio ? 'animate-bounce text-blue-600' : 'text-stone-500'}`} />
-                    <span>{isPlayingAudio ? 'Gipatokar...' : 'Paminaw (Audio)'}</span>
-                  </button>
+                {/* Play Audio Button */}
+                <button
+                  onClick={() => handlePlayAudio(activeChallenge.phraseNative)}
+                  disabled={isPlayingAudio}
+                  className="px-4 py-2 rounded-2xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-bold flex items-center gap-2 mx-auto cursor-pointer transition-all active:scale-95"
+                >
+                  <Volume2 className={`w-4 h-4 ${isPlayingAudio ? 'animate-pulse text-blue-500' : ''}`} />
+                  <span>{isPlayingAudio ? 'Playing Pronunciation...' : 'Listen to Native Voice'}</span>
+                </button>
 
-                  {/* Record Speech button */}
+                {/* Microphone Recording Section */}
+                <div className="pt-2 border-t border-stone-100 dark:border-white/5 space-y-3">
                   <button
                     onClick={handleStartSpeaking}
-                    className={`min-h-[46px] py-2 px-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md text-white ${
+                    className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center text-white transition-all shadow-lg cursor-pointer ${
                       isListening
-                        ? 'bg-rose-600 hover:bg-rose-500 animate-pulse ring-4 ring-rose-500/30'
-                        : challengePassed
-                        ? 'bg-emerald-600 hover:bg-emerald-500'
-                        : 'bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-500 hover:to-teal-500'
+                        ? 'bg-rose-500 scale-110 animate-pulse shadow-rose-500/50'
+                        : 'bg-blue-600 hover:bg-blue-500 active:scale-95 shadow-blue-500/30'
                     }`}
                   >
                     {isListening ? (
-                      <>
-                        <MicOff className="w-4 h-4 animate-spin" />
-                        <span>Naminaw...</span>
-                      </>
+                      <MicOff className="w-8 h-8 animate-bounce" />
                     ) : (
-                      <>
-                        <Mic className="w-4 h-4" />
-                        <span>{challengePassed ? 'Isulti Pag-usab' : 'Isulti Karon (Mic)'}</span>
-                      </>
+                      <Mic className="w-8 h-8" />
                     )}
                   </button>
+
+                  <p className="text-xs font-bold text-stone-600 dark:text-stone-400">
+                    {isListening ? 'Listening... Speak the phrase now!' : 'Tap mic and speak phrase clearly'}
+                  </p>
                 </div>
 
-                {/* Live Speech Feedback Drawer */}
-                {(speechScore !== null || speechTranscript || isListening) && (
-                  <div className="mt-3 p-3 bg-stone-50 dark:bg-stone-900/80 rounded-2xl border border-stone-200 dark:border-white/10 space-y-2 animate-in fade-in duration-200">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono text-[10px] text-stone-400 font-bold uppercase">
-                        {isListening ? 'Whisper Speech Listener' : 'Evaluation Result'}
+                {/* Live Speech Recognition & Score Result */}
+                {speechScore !== null && (
+                  <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/80 dark:border-white/10 text-left space-y-2 animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-stone-500 dark:text-stone-400">
+                        Acoustic Concordance:
                       </span>
-                      {speechScore !== null && (
-                        <span className={`font-mono font-black text-xs px-2 py-0.5 rounded-full ${
-                          challengePassed 
-                            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30'
-                            : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30'
-                        }`}>
-                          {speechScore}% Concordance
-                        </span>
-                      )}
+                      <span className={`font-mono font-black text-sm ${challengePassed ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                        {speechScore}% {challengePassed ? '✓ PASSED' : '✕ TRY AGAIN'}
+                      </span>
                     </div>
 
                     {speechTranscript && (
-                      <div className="text-xs text-stone-700 dark:text-stone-300 italic">
-                        Captured: "{speechTranscript}"
+                      <div className="text-[11px] font-mono text-stone-600 dark:text-stone-300">
+                        Transcribed: "{speechTranscript}"
                       </div>
                     )}
 
                     {speechFeedback && (
-                      <div className={`text-xs font-medium ${challengePassed ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`}>
+                      <p className="text-xs text-stone-700 dark:text-stone-200 font-medium">
                         {speechFeedback}
-                      </div>
+                      </p>
                     )}
 
                     {challengePassed && (
                       <button
                         onClick={handleNextChallenge}
-                        className="w-full min-h-[42px] mt-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                        className="w-full mt-2 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-98"
                       >
-                        <span>
-                          {currentChallengeIndex < selectedLevel.challenges.length - 1
-                            ? 'Sunod nga Challenge →'
-                            : 'Kompletohon ang Level 🎉'}
-                        </span>
+                        <span>Next Speech Drill</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
                 )}
               </div>
-
-              {/* Free AI Companion Option */}
-              <div className="p-3 bg-stone-100 dark:bg-white/5 rounded-2xl flex items-center justify-between gap-2 text-xs">
-                <div className="min-w-0">
-                  <div className="font-bold text-stone-800 dark:text-stone-200 text-xs">
-                    Gusto og libreng pakig-istorya?
-                  </div>
-                  <div className="text-[10px] text-stone-500">
-                    Sulti AI conversational companion
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    sounds.playTap();
-                    onClose();
-                    if (onOpenSultiChat) onOpenSultiChat();
-                  }}
-                  className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
-                >
-                  Open Sulti Chat
-                </button>
-              </div>
             </div>
           )}
 
-          {/* TAB 3: BADGES COLLECTION (KABINET SA PASIDUNGOG) */}
+          {/* TAB 3: BADGES VIEW */}
           {activeTab === 'badges' && (
             <div className="space-y-3">
-              <div className="text-xs text-stone-500 dark:text-stone-400">
-                Kolektaha ang tanang 5 ka <strong>Voice Gamification Badges</strong> pinaagi sa paghuman sa kada lebel:
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200/60 dark:border-amber-600/30 text-xs">
+                <div className="font-display font-black text-xs text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                  <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  Voice Mastery Badges
+                </div>
+                <p className="text-stone-600 dark:text-stone-400 mt-1 text-[11px]">
+                  Pass every level to unlock prestigious badges and Bahandi Gems!
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-2.5">
-                {VOICE_LEVELS.map((level) => {
-                  const isEarned = progress.earnedBadges.includes(level.badge.id);
-
+              <div className="grid grid-cols-2 gap-2.5">
+                {levels.map((lvl) => {
+                  const unlocked = progress.earnedBadges.includes(lvl.badge.id);
                   return (
                     <div
-                      key={level.badge.id}
-                      className={`p-3.5 rounded-2xl border transition-all flex items-center gap-3 ${
-                        isEarned
-                          ? 'bg-white dark:bg-[#11222D] border-stone-200/90 dark:border-white/10 shadow-xs'
-                          : 'bg-stone-100/60 dark:bg-stone-900/30 border-stone-200/50 dark:border-white/5 opacity-55'
+                      key={lvl.badge.id}
+                      className={`p-3 rounded-2xl border text-center space-y-1.5 ${
+                        unlocked
+                          ? 'bg-white dark:bg-[#11222D] border-amber-300 dark:border-amber-600/40 shadow-xs'
+                          : 'bg-stone-100/50 dark:bg-stone-900/30 border-stone-200/50 dark:border-white/5 opacity-60'
                       }`}
                     >
-                      {/* Badge Icon Display */}
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 border ${
-                        isEarned
-                          ? 'bg-gradient-to-tr from-amber-50 to-amber-100 dark:from-amber-950/60 dark:to-stone-800 border-amber-300 dark:border-amber-500/30 shadow-xs'
-                          : 'bg-stone-200 dark:bg-stone-800 border-stone-300 dark:border-white/5'
-                      }`}>
-                        {isEarned ? level.badge.icon : '🔒'}
-                      </div>
-
-                      {/* Badge Metadata */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1 flex-wrap">
-                          <h4 className="font-display font-black text-xs text-stone-900 dark:text-white truncate">
-                            {level.badge.nameBisaya}
-                          </h4>
-                          <span className={`px-2 py-0.5 rounded text-[8.5px] font-bold uppercase tracking-wider ${
-                            isEarned
-                              ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-                              : 'bg-stone-200 dark:bg-stone-800 text-stone-500'
-                          }`}>
-                            {isEarned ? 'UNLOCKED ✓' : 'LOCKED'}
-                          </span>
-                        </div>
-
-                        <p className="text-[11px] text-stone-600 dark:text-stone-300 font-medium mt-0.5">
-                          {level.badge.name} ({level.badge.tier} Tier)
-                        </p>
-
-                        <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5 leading-tight">
-                          {level.badge.criteria}
-                        </p>
-
-                        <div className="mt-1 flex items-center gap-2 text-[10px] font-mono text-amber-600 dark:text-amber-400 font-bold">
-                          <span>+{level.badge.xpReward} XP</span>
-                          <span>•</span>
-                          <span>+{level.badge.gemsReward} Gems</span>
-                        </div>
-                      </div>
+                      <div className="text-2xl">{lvl.badge.icon}</div>
+                      <h4 className="font-display font-black text-xs text-stone-900 dark:text-white leading-tight">
+                        {lvl.badge.name}
+                      </h4>
+                      <p className="text-[10px] text-stone-500 dark:text-stone-400 line-clamp-2">
+                        {lvl.badge.description}
+                      </p>
+                      <span className="text-[10px] font-mono font-bold block pt-1 text-teal-600 dark:text-teal-400">
+                        {unlocked ? '✓ UNLOCKED' : `Requires Lv. ${lvl.id}`}
+                      </span>
                     </div>
                   );
                 })}
               </div>
             </div>
           )}
-
         </div>
-
-        {/* MODAL FOOTER */}
-        <div className="p-3 bg-white dark:bg-[#11222D] border-t border-stone-200/90 dark:border-white/10 flex items-center justify-between gap-2 shrink-0">
-          <div className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
-            {activeTab === 'arena' ? `Level ${selectedLevel.id}: ${selectedLevel.titleBisaya}` : 'Dalang Tingog • SultiAI Voice'}
-          </div>
-
-          <button
-            onClick={() => {
-              sounds.playTap();
-              onClose();
-            }}
-            className="px-4 py-2 bg-stone-100 dark:bg-white/10 hover:bg-stone-200 dark:hover:bg-white/15 text-stone-800 dark:text-stone-200 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0"
-          >
-            Ika-uyon (Close)
-          </button>
-        </div>
-
       </div>
-
-      {/* CELEBRATORY BADGE UNLOCKED MODAL OVERLAY */}
-      {unlockedBadge && (
-        <div className="fixed inset-0 z-60 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in zoom-in-95 duration-200">
-          <div className="w-full max-w-sm bg-white dark:bg-[#11222D] rounded-3xl p-6 text-center border-2 border-amber-400 shadow-2xl space-y-4">
-            <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center text-4xl shadow-lg animate-bounce">
-              {unlockedBadge.icon}
-            </div>
-
-            <div className="space-y-1">
-              <span className="px-3 py-1 rounded-full text-[10px] font-mono font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300">
-                🎉 BAG-ONG PASIDUNGOG!
-              </span>
-              <h3 className="font-display font-black text-xl text-stone-900 dark:text-white pt-1">
-                {unlockedBadge.nameBisaya}
-              </h3>
-              <p className="text-xs text-stone-500 dark:text-stone-400">
-                {unlockedBadge.descriptionBisaya}
-              </p>
-            </div>
-
-            <div className="p-3 bg-stone-50 dark:bg-stone-900/60 rounded-2xl border border-stone-200/80 dark:border-white/5 flex items-center justify-around text-xs">
-              <div className="space-y-0.5">
-                <div className="text-[10px] text-stone-400 font-bold uppercase">XP Award</div>
-                <div className="font-black font-mono text-sm text-amber-600 dark:text-amber-400">
-                  +{unlockedBadge.xpReward} XP
-                </div>
-              </div>
-              <div className="space-y-0.5">
-                <div className="text-[10px] text-stone-400 font-bold uppercase">Bahandi Gems</div>
-                <div className="font-black font-mono text-sm text-sky-600 dark:text-sky-400">
-                  +{unlockedBadge.gemsReward} 💎
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                sounds.playTap();
-                setUnlockedBadge(null);
-                setActiveTab('path');
-              }}
-              className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer"
-            >
-              Padayon sa Pagsulti (Continue)
-            </button>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 };

@@ -93,8 +93,8 @@ export default function App() {
   }, [appMode]);
 
   // Find the next recommended incomplete lesson
-  const allLessons = modules.flatMap((m) => m.lessons);
-  const nextLesson = allLessons.find((l) => !profile.completedLessons.includes(l.id)) || allLessons[0];
+  const allLessons = modules.flatMap((m) => m.lessons || []);
+  const nextLesson = allLessons.find((l) => !profile.completedLessons.includes(l.id)) || allLessons[0] || INITIAL_MODULES[0].lessons[0];
 
   // Handle lesson start
   const handleStartLesson = (lesson: Lesson) => {

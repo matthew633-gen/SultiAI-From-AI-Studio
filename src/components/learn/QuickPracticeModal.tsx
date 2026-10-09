@@ -18,24 +18,66 @@ interface QuickPracticeModalProps {
   onOpenSulti?: (prompt?: string) => void;
 }
 
-const SAMPLE_FLASHCARDS = [
-  { id: 'fc_1', bisaya: 'Palihog ko sa plete, Nong.', english: 'Please pass my fare, driver.', context: 'Jeepney Commuting', audio: 'Palihog ko sa plete, Nong.' },
-  { id: 'fc_2', bisaya: 'Tagpila man ni, Nang?', english: 'How much is this, ma\'am?', context: 'Market Bargaining', audio: 'Tagpila man ni, Nang?' },
-  { id: 'fc_3', bisaya: 'Puyde hangyo gamay?', english: 'Can I ask for a small discount?', context: 'Palengke Etiquette', audio: 'Puyde hangyo gamay?' },
-  { id: 'fc_4', bisaya: 'Lugar lang, Nong!', english: 'Stop here, driver!', context: 'Pulling Over', audio: 'Lugar lang, Nong!' },
-  { id: 'fc_5', bisaya: 'Bitaw no? Lami gyud!', english: 'I know right? Truly delicious!', context: 'Conversational Agreement', audio: 'Bitaw no? Lami gyud!' },
-];
+// ---------------------------------------------------------------------------
+// CATEGORIZED LEARNING DATA: CEBUANO / BISAYA VS FILIPINO / TAGALOG
+// ---------------------------------------------------------------------------
 
-const COLLOQUIAL_PHRASES = [
-  { bisaya: 'Lugar lang, Nong!', english: 'Stop here, driver!', category: 'Jeepney', note: 'Polite way to ask driver to pull over' },
-  { bisaya: 'Palihog ko sa plete, Nong.', english: 'Please pass my fare, sir.', category: 'Jeepney', note: 'Pass fare politely along passengers' },
-  { bisaya: 'Naa bay sukli ang singkwenta?', english: 'Is there change for 50 pesos?', category: 'Jeepney', note: 'Ask beforehand for larger bills' },
-  { bisaya: 'Tagpila ang kilo sa mangga?', english: 'How much is a kilo of mangoes?', category: 'Market', note: 'Ask price per unit' },
-  { bisaya: 'Puyde hangyo, Nang?', english: 'May I request a discount, ma\'am?', category: 'Market', note: 'Friendly discount request' },
-  { bisaya: 'Pila tanan among nabayran?', english: 'How much is our bill in total?', category: 'Dining', note: 'Settling carenderia bill' },
-  { bisaya: 'Asa dapit ang parmasya?', english: 'Where is the pharmacy located?', category: 'Directions', note: 'Inquiring for landmarks' },
-  { bisaya: 'Salamat kaayo!', english: 'Thank you very much!', category: 'Etiquette', note: 'Heartfelt Visayan gratitude' },
-];
+const FLASHCARDS_BY_CATEGORY = {
+  cebuano: [
+    { id: 'fc_ceb_1', native: 'Palihog ko sa plete, Nong.', english: 'Please pass my fare, driver.', context: 'Jeepney Commuting', phonetics: 'Pah-LEE-hog koh sah PLEH-teh, NONG.' },
+    { id: 'fc_ceb_2', native: 'Tagpila man ni, Nang?', english: 'How much is this, ma\'am?', context: 'Market Bargaining', phonetics: 'Tag-PEE-lah mahn nee, NAHNG?' },
+    { id: 'fc_ceb_3', native: 'Puyde hangyo gamay?', english: 'Can I ask for a small discount?', context: 'Palengke Etiquette', phonetics: 'POOY-deh HAHNG-yoh GAH-my?' },
+    { id: 'fc_ceb_4', native: 'Lugar lang, Nong!', english: 'Stop here, driver!', context: 'Pulling Over', phonetics: 'LOO-gahr lahng, NONG!' },
+    { id: 'fc_ceb_5', native: 'Bitaw no? Lami gyud!', english: 'I know right? Truly delicious!', context: 'Conversational Agreement', phonetics: 'BEE-taw noh? LAH-mee gyood!' },
+  ],
+  filipino: [
+    { id: 'fc_fil_1', native: 'Makikisuyo po ng bayad, Kuya.', english: 'Please pass my fare, driver.', context: 'Jeepney Commuting', phonetics: 'Mah-kee-kee-SOO-yoh poh ng BAH-yad, KOO-yah.' },
+    { id: 'fc_fil_2', native: 'Magkano po ito, Ate?', english: 'How much is this, ma\'am?', context: 'Market Bargaining', phonetics: 'Mag-KAH-noh poh ee-TOH, AH-teh?' },
+    { id: 'fc_fil_3', native: 'Pwede po bang tumawad?', english: 'Can I ask for a small discount?', context: 'Palengke Etiquette', phonetics: 'PWEH-deh poh bahng too-MAH-wad?' },
+    { id: 'fc_fil_4', native: 'Para po sa tabi!', english: 'Stop here by the curb, driver!', context: 'Pulling Over', phonetics: 'PAH-rah poh sah TAH-bee!' },
+    { id: 'fc_fil_5', native: 'Talaga po? Ang sarap naman!', english: 'Really? That is truly delicious!', context: 'Conversational Agreement', phonetics: 'Tah-lah-GAH poh? Ahng sah-RAP nah-MAN!' },
+  ],
+  english: [
+    { id: 'fc_eng_1', native: 'Could you please point me in the right direction?', english: 'Asking for directions politely.', context: 'Transit & Navigation', phonetics: 'KOOD yoo pleez POYNT mee in thuh RYT duh-REK-shun?' },
+    { id: 'fc_eng_2', native: 'How much does this cost including taxes?', english: 'Inquiring about total price.', context: 'Market & Shopping', phonetics: 'HOW much duz this KOST in-KLOO-ding TAKS-iz?' },
+    { id: 'fc_eng_3', native: 'Is there any chance of getting a discount?', english: 'Requesting a courtesy discount.', context: 'Bargaining & Discounts', phonetics: 'iz thair EN-ee chans uv GET-ing uh DIS-kownt?' },
+    { id: 'fc_eng_4', native: 'Please pull over right here by the curb.', english: 'Instructing driver to halt.', context: 'Ride & Taxi Stop', phonetics: 'PLEEZ pool OH-ver RYT heer by thuh KURB.' },
+    { id: 'fc_eng_5', native: 'I completely agree with you on that point!', english: 'Expressing strong alignment.', context: 'Conversational Agreement', phonetics: 'eye kum-PLEET-lee uh-GREE with yoo on that POYNT!' },
+  ],
+};
+
+const PHRASES_BY_CATEGORY = {
+  cebuano: [
+    { native: 'Lugar lang, Nong!', english: 'Stop here, driver!', category: 'Jeepney', note: 'Polite way to ask driver to pull over in Bisaya' },
+    { native: 'Palihog ko sa plete, Nong.', english: 'Please pass my fare, sir.', category: 'Jeepney', note: 'Pass fare politely along passengers' },
+    { native: 'Naa bay sukli ang singkwenta?', english: 'Is there change for 50 pesos?', category: 'Jeepney', note: 'Ask beforehand for larger bills' },
+    { native: 'Tagpila ang kilo sa mangga?', english: 'How much is a kilo of mangoes?', category: 'Market', note: 'Ask price per unit' },
+    { native: 'Puyde hangyo, Nang?', english: 'May I request a discount, ma\'am?', category: 'Market', note: 'Friendly discount request' },
+    { native: 'Pila tanan among nabayran?', english: 'How much is our bill in total?', category: 'Dining', note: 'Settling carenderia bill' },
+    { native: 'Asa dapit ang parmasya?', english: 'Where is the pharmacy located?', category: 'Directions', note: 'Inquiring for landmarks' },
+    { native: 'Salamat kaayo, amping!', english: 'Thank you very much, take care!', category: 'Etiquette', note: 'Heartfelt Visayan gratitude' },
+  ],
+  filipino: [
+    { native: 'Para po sa tabi!', english: 'Stop here by the curb, driver!', category: 'Jeepney', note: 'Universal Metro Manila jeepney stop call' },
+    { native: 'Makikisuyo po ng bayad, Kuya.', english: 'Please pass my fare, driver.', category: 'Jeepney', note: 'Polite honorific when passing coins' },
+    { native: 'May panukli po ba sa singkwenta?', english: 'Is there change for 50 pesos?', category: 'Jeepney', note: 'Ask driver before paying big bills' },
+    { native: 'Magkano po ang kilo ng mangga?', english: 'How much is a kilo of mangoes?', category: 'Market', note: 'Standard price inquiry' },
+    { native: 'Pwede po bang tumawad, Ate?', english: 'May I ask for a small discount, ma\'am?', category: 'Market', note: 'Friendly market bargaining' },
+    { native: 'Magkano po lahat ang babayaran?', english: 'How much is our total bill?', category: 'Dining', note: 'Settling restaurant bill' },
+    { native: 'Saan po banda ang botika?', english: 'Where is the pharmacy located?', category: 'Directions', note: 'Inquiring for nearby drugstore' },
+    { native: 'Maraming salamat po, ingat!', english: 'Thank you very much, take care!', category: 'Etiquette', note: 'Respectful Tagalog expression' },
+  ],
+  english: [
+    { native: 'Please pull over right by the sidewalk.', english: 'Stop here, driver!', category: 'Transit', note: 'Polite way to ask driver or cab to pull over' },
+    { native: 'Could you please pass my fare forward?', english: 'Please pass my payment.', category: 'Transit', note: 'Commuter etiquette when seated far from conductor' },
+    { native: 'Do you have change for a hundred-dollar bill?', english: 'Change inquiry.', category: 'Transit', note: 'Ask beforehand for larger denominations' },
+    { native: 'What is the price per kilogram for fresh fruit?', english: 'Produce pricing inquiry.', category: 'Market', note: 'Standard unit pricing question' },
+    { native: 'Would you be open to offering a slight discount?', english: 'Polite bargaining.', category: 'Market', note: 'Courteous discount inquiry' },
+    { native: 'Could we please get the itemized bill?', english: 'Settling meal total.', category: 'Dining', note: 'Requesting check after dining' },
+    { native: 'Excuse me, where can I find the nearest pharmacy?', english: 'Direction inquiry.', category: 'Directions', note: 'Locating essential medical services' },
+    { native: 'Thank you very much, take good care!', english: 'Warm departing gratitude.', category: 'Etiquette', note: 'Universal friendly farewell' },
+  ],
+};
 
 export const QuickPracticeModal: React.FC<QuickPracticeModalProps> = ({
   isOpen,
@@ -43,6 +85,26 @@ export const QuickPracticeModal: React.FC<QuickPracticeModalProps> = ({
   onClose,
   onOpenSulti,
 }) => {
+  // Category switcher: 'cebuano' | 'filipino' | 'english'
+  const [selectedCategory, setSelectedCategory] = useState<'cebuano' | 'filipino' | 'english'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sultiai_selected_language');
+      if (saved === 'filipino' || saved === 'english' || saved === 'cebuano') {
+        return saved;
+      }
+    }
+    return 'cebuano';
+  });
+
+  // Keep category in sync with active journey selection when opened
+  React.useEffect(() => {
+    if (isOpen && typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sultiai_selected_language');
+      if (saved === 'filipino' || saved === 'english' || saved === 'cebuano') {
+        setSelectedCategory(saved);
+      }
+    }
+  }, [isOpen]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [playingPhrase, setPlayingPhrase] = useState<string | null>(null);
@@ -54,6 +116,9 @@ export const QuickPracticeModal: React.FC<QuickPracticeModalProps> = ({
   if (!isOpen || !tool) return null;
 
   const currentModule = TOOLKIT_MODULES.find((m) => m.id === tool);
+  const flashcards = FLASHCARDS_BY_CATEGORY[selectedCategory];
+  const colloquialPhrases = PHRASES_BY_CATEGORY[selectedCategory];
+  const currentFlashcard = flashcards[currentCardIndex % flashcards.length];
 
   const handlePlayAudio = async (text: string) => {
     setPlayingPhrase(text);
@@ -62,35 +127,42 @@ export const QuickPracticeModal: React.FC<QuickPracticeModalProps> = ({
     setPlayingPhrase(null);
   };
 
-  const currentFlashcard = SAMPLE_FLASHCARDS[currentCardIndex];
-
   const handleNextCard = () => {
     sounds.playTap();
     setIsFlipped(false);
-    setCurrentCardIndex((prev) => (prev + 1) % SAMPLE_FLASHCARDS.length);
+    setCurrentCardIndex((prev) => (prev + 1) % flashcards.length);
   };
 
   const handleSimulateMic = () => {
     sounds.playTap();
     setMicActive(true);
-    setMicTranscript('Listening to pronunciation... "Maayong buntag, kumusta ka?"');
+    const targetPhrase = 
+      selectedCategory === 'cebuano' 
+        ? 'Maayong buntag, kumusta ka?' 
+        : 'Magandang umaga po, kumusta po kayo?';
+
+    setMicTranscript(`Listening to pronunciation... "${targetPhrase}"`);
     setTimeout(() => {
       setMicActive(false);
-      setMicTranscript('✓ Pronunciation concordance: 94% (Whisper ASR: Natural intonation, no hesitation)');
+      setMicTranscript(
+        selectedCategory === 'cebuano'
+          ? '✓ Pronunciation concordance: 94% (Whisper ASR: Crisp Visayan vowels & warm intonation)'
+          : '✓ Pronunciation concordance: 95% (Whisper ASR: Polite honorifics & natural Tagalog stress)'
+      );
       setDrillCompleted(true);
       sounds.playCorrect();
     }, 1800);
   };
 
-  const filteredPhrases = COLLOQUIAL_PHRASES.filter(
+  const filteredPhrases = colloquialPhrases.filter(
     (p) =>
-      p.bisaya.toLowerCase().includes(searchPhrase.toLowerCase()) ||
+      p.native.toLowerCase().includes(searchPhrase.toLowerCase()) ||
       p.english.toLowerCase().includes(searchPhrase.toLowerCase()) ||
       p.category.toLowerCase().includes(searchPhrase.toLowerCase())
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200 select-none">
       <div className="w-full max-w-md max-h-[92vh] sm:max-h-[88vh] flex flex-col bg-white dark:bg-[#11222D] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-300 dark:border-white/15 overflow-hidden transition-all animate-in slide-in-from-bottom-4 duration-250">
         
         {/* Mobile Drag Indicator */}
@@ -99,57 +171,110 @@ export const QuickPracticeModal: React.FC<QuickPracticeModalProps> = ({
         </div>
 
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-stone-200 dark:border-white/10 flex items-center justify-between bg-stone-50/80 dark:bg-[#152B37]/80 shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-lg bg-teal-50 dark:bg-teal-950/80 border border-teal-200 dark:border-teal-500/30 text-teal-800 dark:text-teal-300 shadow-xs shrink-0">
-              {currentModule?.icon || '📚'}
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-mono font-bold text-teal-600 dark:text-teal-400">
-                  Module {currentModule?.num || '01'}
-                </span>
-                <h3 className="font-display font-black text-sm text-stone-900 dark:text-white truncate">
-                  {currentModule?.title || 'Interactive Learning Drill'}
-                </h3>
+        <div className="p-4 border-b border-stone-200 dark:border-white/10 space-y-2.5 bg-stone-50/80 dark:bg-[#152B37]/80 shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-lg bg-teal-50 dark:bg-teal-950/80 border border-teal-200 dark:border-teal-500/30 text-teal-800 dark:text-teal-300 shadow-xs shrink-0">
+                {currentModule?.icon || '📚'}
               </div>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">
-                {currentModule?.purpose || 'Independent practice with SULTI companion'}
-              </p>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-mono font-bold text-teal-600 dark:text-teal-400">
+                    Tool #{currentModule?.num || '01'}
+                  </span>
+                  <h3 className="font-display font-black text-sm text-stone-900 dark:text-white truncate">
+                    {currentModule?.title || 'Learning Tool'}
+                  </h3>
+                </div>
+                <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">
+                  {currentModule?.purpose || 'Independent practice with SULTI companion'}
+                </p>
+              </div>
             </div>
+
+            <button
+              onClick={() => {
+                sounds.playTap();
+                onClose();
+              }}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors cursor-pointer shrink-0"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          <button
-            onClick={() => {
-              sounds.playTap();
-              onClose();
-            }}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors cursor-pointer shrink-0"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {/* MAJOR LANGUAGE CATEGORY PILLS */}
+          <div className="grid grid-cols-3 gap-1 p-1 bg-stone-200/60 dark:bg-stone-900/80 rounded-2xl border border-stone-200 dark:border-white/5 text-xs font-bold">
+            <button
+              onClick={() => {
+                sounds.playTap();
+                setSelectedCategory('cebuano');
+                setCurrentCardIndex(0);
+              }}
+              className={`py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                selectedCategory === 'cebuano'
+                  ? 'bg-teal-600 text-white shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
+              }`}
+            >
+              <span>🇵🇭</span>
+              <span className="truncate">Cebuano</span>
+            </button>
+
+            <button
+              onClick={() => {
+                sounds.playTap();
+                setSelectedCategory('filipino');
+                setCurrentCardIndex(0);
+              }}
+              className={`py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                selectedCategory === 'filipino'
+                  ? 'bg-teal-600 text-white shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
+              }`}
+            >
+              <span>🇵🇭</span>
+              <span className="truncate">Filipino</span>
+            </button>
+
+            <button
+              onClick={() => {
+                sounds.playTap();
+                setSelectedCategory('english');
+                setCurrentCardIndex(0);
+              }}
+              className={`py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                selectedCategory === 'english'
+                  ? 'bg-teal-600 text-white shadow-xs'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
+              }`}
+            >
+              <span>🌎</span>
+              <span className="truncate">English</span>
+            </button>
+          </div>
         </div>
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4">
           
-          {/* TOOL 1: VOICE DRILL */}
-          {tool === 'voice' && (
+          {/* TOOL 1: VOICE DRILL / PRONUNCIATION */}
+          {(tool === 'voice' || tool === 'pronunciation') && (
             <div className="space-y-4 text-center py-2">
               <div className="p-5 bg-blue-50/60 dark:bg-blue-950/40 rounded-3xl border border-blue-200 dark:border-blue-800/60 space-y-3">
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/60 px-2.5 py-0.5 rounded-full">
-                  Target Phonetic Phrase
+                  {selectedCategory === 'cebuano' ? 'Bisaya Phonetic Drill' : 'Filipino Phonetic Drill'}
                 </span>
                 <div className="font-display font-black text-xl text-stone-900 dark:text-white">
-                  "Maayong buntag, kumusta ka?"
+                  "{selectedCategory === 'cebuano' ? 'Maayong buntag, kumusta ka?' : 'Magandang umaga po, kumusta po kayo?'}"
                 </div>
                 <div className="text-xs text-stone-500 dark:text-stone-400 italic">
-                  "Good morning, how are you?"
+                  "{selectedCategory === 'cebuano' ? 'Good morning, how are you?' : 'Good morning, how are you? (polite)'}"
                 </div>
 
                 <button
-                  onClick={() => handlePlayAudio('Maayong buntag, kumusta ka?')}
+                  onClick={() => handlePlayAudio(selectedCategory === 'cebuano' ? 'Maayong buntag, kumusta ka?' : 'Magandang umaga po, kumusta po kayo?')}
                   className="px-3 py-1.5 rounded-xl bg-white dark:bg-stone-800 hover:bg-blue-100 dark:hover:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs inline-flex items-center gap-1.5 border border-blue-200 dark:border-blue-700 shadow-2xs cursor-pointer active:scale-95"
                 >
                   <Volume2 className="w-3.5 h-3.5" />
@@ -164,7 +289,7 @@ export const QuickPracticeModal: React.FC<QuickPracticeModalProps> = ({
                   className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 cursor-pointer ${
                     micActive
                       ? 'bg-rose-600 text-white animate-pulse ring-8 ring-rose-500/30'
-                      : 'bg-blue-600 hover:bg-blue-500 text-white btn-3d-teal'
+                      : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/30'
                   }`}
                 >
                   <Mic className="w-8 h-8" />
@@ -186,7 +311,7 @@ export const QuickPracticeModal: React.FC<QuickPracticeModalProps> = ({
           {tool === 'scenario' && (
             <div className="space-y-3">
               <p className="text-xs text-stone-500 dark:text-stone-400">
-                Choose a realistic contextual scenario to start live conversational roleplay with SULTI:
+                Choose a realistic scenario in {selectedCategory === 'cebuano' ? 'Cebuano / Bisaya' : 'Filipino / Tagalog'} to start conversational roleplay with SULTI:
               </p>
 
               <div className="space-y-2">
@@ -196,7 +321,10 @@ export const QuickPracticeModal: React.FC<QuickPracticeModalProps> = ({
                     onClick={() => {
                       sounds.playTap();
                       onClose();
-                      onOpenSulti?.(`Gusto kong magpraktis sa scenario: ${sc.title} (${sc.context}). Mag-Bisaya ta!`);
+                      const prompt = selectedCategory === 'cebuano'
+                        ? `Gusto kong magpraktis sa scenario: ${sc.title} (${sc.context}). Mag-Bisaya ta!`
+                        : `Gusto kong mag-practice ng scenario: ${sc.title} (${sc.context}). Mag-Filipino tayo!`;
+                      onOpenSulti?.(prompt);
                     }}
                     className="p-3.5 bg-stone-50 dark:bg-[#152B37] hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded-2xl border border-stone-200 dark:border-white/10 hover:border-purple-300 dark:hover:border-purple-500/40 transition-all cursor-pointer group flex items-start gap-3"
                   >
@@ -215,7 +343,7 @@ export const QuickPracticeModal: React.FC<QuickPracticeModalProps> = ({
                         {sc.context}
                       </p>
                       <div className="text-[10px] text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1 mt-1">
-                        <span>Start SULTI Roleplay</span>
+                        <span>Start {selectedCategory === 'cebuano' ? 'Bisaya' : 'Filipino'} Roleplay</span>
                         <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
@@ -226,10 +354,10 @@ export const QuickPracticeModal: React.FC<QuickPracticeModalProps> = ({
           )}
 
           {/* TOOL 3: FLASHCARDS */}
-          {tool === 'flashcards' && (
+          {(tool === 'flashcards' || tool === 'vocabulary') && (
             <div className="space-y-4 py-2">
               <div className="flex items-center justify-between text-xs text-stone-400 px-1 font-mono">
-                <span>Card {currentCardIndex + 1} of {SAMPLE_FLASHCARDS.length}</span>
+                <span>Card {currentCardIndex + 1} of {flashcards.length} ({selectedCategory === 'cebuano' ? 'Bisaya' : 'Filipino'})</span>
                 <span>Tap to flip</span>
               </div>
 
@@ -249,221 +377,95 @@ export const QuickPracticeModal: React.FC<QuickPracticeModalProps> = ({
                   {currentFlashcard.context}
                 </div>
 
-                <div className="space-y-1 my-auto">
-                  <div className="font-display font-black text-lg sm:text-xl">
-                    {isFlipped ? currentFlashcard.english : currentFlashcard.bisaya}
+                <div className="py-2 space-y-1">
+                  <div className="font-display font-black text-2xl">
+                    {isFlipped ? currentFlashcard.english : currentFlashcard.native}
                   </div>
-                  <div className="text-xs opacity-80 italic">
-                    {isFlipped ? 'English Translation' : 'Bisaya Target Expression'}
-                  </div>
+                  {!isFlipped && (
+                    <div className="text-xs opacity-80 font-mono">
+                      {currentFlashcard.phonetics}
+                    </div>
+                  )}
                 </div>
 
-                {!isFlipped && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePlayAudio(currentFlashcard.audio);
-                    }}
-                    className="p-2 mx-auto rounded-full bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 hover:bg-teal-200 transition-colors"
-                  >
-                    <Volume2 className="w-4 h-4" />
-                  </button>
-                )}
+                <div className="text-[11px] opacity-75 font-medium flex items-center justify-center gap-1">
+                  <RotateCw className="w-3 h-3" />
+                  <span>{isFlipped ? 'Tap to see phrase' : 'Tap to see English translation'}</span>
+                </div>
               </div>
 
-              <div className="flex items-center justify-between gap-3 pt-2">
+              {/* Flashcard Controls */}
+              <div className="flex items-center gap-2 pt-1">
                 <button
-                  onClick={handleNextCard}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 font-bold text-xs cursor-pointer"
+                  onClick={() => handlePlayAudio(currentFlashcard.native)}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 border border-stone-200 dark:border-white/10"
                 >
-                  Review Later
+                  <Volume2 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                  <span>Pronounce</span>
                 </button>
+
                 <button
                   onClick={handleNextCard}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs btn-3d-teal cursor-pointer"
+                  className="flex-1 py-3 px-4 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shadow-xs"
                 >
-                  I Know This ✓
+                  <span>Next Card</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
           )}
 
           {/* TOOL 4: PHRASEBOOK */}
-          {tool === 'phrasebook' && (
+          {(tool === 'phrasebook' || tool === 'grammar' || tool === 'writing' || tool === 'reading' || tool === 'sulti_switch' || tool === 'culture' || tool === 'review_center' || tool === 'listening') && (
             <div className="space-y-3">
+              {/* Search Phrase */}
               <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchPhrase}
                   onChange={(e) => setSearchPhrase(e.target.value)}
-                  placeholder="Search Bisaya or English phrases..."
-                  className="w-full pl-9 pr-3 py-2 bg-stone-100 dark:bg-stone-800 rounded-xl text-xs text-stone-900 dark:text-white placeholder:text-stone-400 border border-stone-200 dark:border-white/10 outline-none focus:border-teal-500"
+                  placeholder={`Search ${selectedCategory === 'cebuano' ? 'Bisaya' : 'Filipino'} expressions...`}
+                  className="w-full pl-9 pr-4 py-2 bg-stone-100 dark:bg-stone-800 border border-transparent focus:border-teal-500 rounded-xl text-xs text-stone-900 dark:text-white placeholder:text-stone-400 focus:outline-none"
                 />
               </div>
 
-              <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+              {/* Phrase List */}
+              <div className="space-y-2">
                 {filteredPhrases.map((phrase, idx) => (
                   <div
                     key={idx}
-                    className="p-3 bg-white dark:bg-[#152B37] rounded-2xl border border-stone-200/90 dark:border-white/10 flex items-center justify-between gap-3"
+                    className="p-3 bg-stone-50 dark:bg-[#152B37] rounded-2xl border border-stone-200 dark:border-white/10 space-y-1 hover:border-teal-300 dark:hover:border-teal-700 transition-colors"
                   >
-                    <div className="space-y-0.5 min-w-0">
-                      <div className="font-display font-black text-xs text-stone-900 dark:text-white">
-                        {phrase.bisaya}
-                      </div>
-                      <div className="text-[11px] text-stone-500 dark:text-stone-400 italic">
-                        "{phrase.english}"
-                      </div>
-                      <div className="text-[9px] font-mono text-teal-700 dark:text-teal-300">
-                        {phrase.note}
-                      </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono uppercase text-teal-700 dark:text-teal-400 font-bold bg-teal-50 dark:bg-teal-950/60 px-2 py-0.5 rounded-md">
+                        {phrase.category}
+                      </span>
+                      <button
+                        onClick={() => handlePlayAudio(phrase.native)}
+                        className="p-1 rounded-lg text-stone-400 hover:text-teal-600 dark:hover:text-teal-300 cursor-pointer"
+                        title="Listen"
+                      >
+                        <Volume2 className="w-4 h-4" />
+                      </button>
                     </div>
 
-                    <button
-                      onClick={() => handlePlayAudio(phrase.bisaya)}
-                      disabled={playingPhrase === phrase.bisaya}
-                      className={`p-2 rounded-xl text-stone-700 dark:text-stone-200 hover:bg-teal-50 dark:hover:bg-teal-950 border border-stone-200 dark:border-white/10 shrink-0 cursor-pointer ${
-                        playingPhrase === phrase.bisaya ? 'bg-teal-100 dark:bg-teal-950 animate-pulse text-teal-700' : ''
-                      }`}
-                    >
-                      <Volume2 className="w-4 h-4" />
-                    </button>
+                    <div className="font-display font-black text-sm text-stone-900 dark:text-white">
+                      "{phrase.native}"
+                    </div>
+                    <div className="text-xs text-stone-600 dark:text-stone-300">
+                      {phrase.english}
+                    </div>
+                    <div className="text-[10px] text-stone-400 italic pt-0.5">
+                      💡 {phrase.note}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* TOOL 5: PRONUNCIATION LAB */}
-          {tool === 'pronunciation' && (
-            <div className="space-y-4 py-2">
-              <div className="p-4 bg-teal-50 dark:bg-teal-950/40 rounded-2xl border border-teal-200 dark:border-teal-800 space-y-2">
-                <span className="text-[10px] font-mono font-bold uppercase text-teal-800 dark:text-teal-300">
-                  Target Phonetic Drill
-                </span>
-                <div className="font-display font-black text-lg text-stone-900 dark:text-white">
-                  "Lugar lang sa unahan, Manong!"
-                </div>
-                <div className="text-xs text-stone-500 italic">
-                  "Pull over ahead near the corner, driver!"
-                </div>
-                <button
-                  onClick={() => handlePlayAudio('Lugar lang sa unahan, Manong!')}
-                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-stone-800 text-teal-700 dark:text-teal-300 font-bold text-xs inline-flex items-center gap-1.5 border border-teal-200 shadow-2xs cursor-pointer"
-                >
-                  <Volume2 className="w-3.5 h-3.5" />
-                  <span>Listen Model Audio</span>
-                </button>
-              </div>
-
-              <div className="text-center py-2 space-y-2">
-                <button
-                  onClick={handleSimulateMic}
-                  className="w-16 h-16 mx-auto rounded-full bg-teal-600 hover:bg-teal-500 text-white flex items-center justify-center shadow-md cursor-pointer"
-                >
-                  <Mic className="w-7 h-7" />
-                </button>
-                <p className="text-xs text-stone-500">{micActive ? 'Evaluating pronunciation...' : 'Tap to test acoustic accuracy'}</p>
-                {micTranscript && (
-                  <div className="p-3 bg-stone-100 dark:bg-stone-800 rounded-xl text-xs font-mono text-stone-800 dark:text-stone-200">
-                    {micTranscript}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* TOOL 6-13: SPECIALIZED TARGETED TOOL DRILL & SULTI COMPANION BRIDGE */}
-          {['grammar', 'vocabulary', 'listening', 'writing', 'reading', 'sulti_switch', 'culture', 'review_center'].includes(tool) && (
-            <div className="space-y-4 py-2">
-              <div className="p-4 bg-stone-50 dark:bg-stone-800/60 rounded-3xl border border-stone-200 dark:border-white/10 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{currentModule?.icon}</span>
-                  <div>
-                    <h4 className="font-display font-black text-sm text-stone-900 dark:text-white">
-                      {currentModule?.title}
-                    </h4>
-                    <p className="text-xs text-teal-700 dark:text-teal-300 font-medium">
-                      {currentModule?.purpose}
-                    </p>
-                  </div>
-                </div>
-
-                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
-                  {currentModule?.quickDescription}
-                </p>
-
-                {/* Interactive Drill Card */}
-                <div className="p-3 bg-white dark:bg-[#11222D] rounded-2xl border border-stone-200/80 dark:border-white/5 space-y-2">
-                  <div className="text-[10px] font-mono font-bold uppercase text-stone-400">
-                    Current Focus Task
-                  </div>
-                  <div className="text-xs font-bold text-stone-800 dark:text-stone-200">
-                    {tool === 'grammar' && 'Understanding topic marker "ang" vs directional "sa"'}
-                    {tool === 'vocabulary' && 'Carenderia & Bankerohan Market colloquial terms'}
-                    {tool === 'listening' && 'Acoustic differentiation: "Gud" vs "Gyud" in conversational banter'}
-                    {tool === 'writing' && 'Drafting a polite text message: "Salamat sa tabang, amping kanunay."'}
-                    {tool === 'reading' && 'Reading short folk legend: "Ang Alamat sa Durian"'}
-                    {tool === 'sulti_switch' && 'Speed drill: Shift thought instantly from English to Bisaya'}
-                    {tool === 'culture' && 'Bisaya hospitality etiquette: "Kaon ta!"'}
-                    {tool === 'review_center' && 'Weak phoneme reinforcement: Glottal stops in "wala\'y"'}
-                  </div>
-
-                  <button
-                    onClick={() => handlePlayAudio(
-                      tool === 'culture' ? 'Kaon ta ninyo!' : 'Salamat sa tabang, amping kanunay.'
-                    )}
-                    className="px-3 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold text-[11px] inline-flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Volume2 className="w-3.5 h-3.5" />
-                    <span>Play Reference Audio</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Action Bridge to SULTI AI */}
-              <div className="p-4 bg-gradient-to-r from-purple-500/10 via-teal-500/10 to-blue-500/10 dark:from-purple-950/30 dark:via-teal-950/30 dark:to-blue-950/30 rounded-2xl border border-purple-200/60 dark:border-purple-500/20 space-y-2 text-center">
-                <div className="text-xs font-bold text-purple-900 dark:text-purple-200">
-                  Connect with SULTI AI Companion
-                </div>
-                <p className="text-[11px] text-stone-600 dark:text-stone-400">
-                  Dive into real-time interactive practice with contextual guidance and instant feedback.
-                </p>
-
-                <button
-                  onClick={() => {
-                    sounds.playTap();
-                    onClose();
-                    onOpenSulti?.(currentModule?.promptSuggestion);
-                  }}
-                  className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Start Practice with SULTI →</span>
-                </button>
-              </div>
-            </div>
-          )}
-
         </div>
-
-        {/* Footer */}
-        <div className="p-3 bg-stone-50 dark:bg-[#152B37] border-t border-stone-200 dark:border-white/10 flex items-center justify-between text-xs shrink-0">
-          <span className="text-stone-400 font-mono text-[10px]">
-            SULTI Academic & Conversational Toolkit
-          </span>
-          <button
-            onClick={() => {
-              sounds.playTap();
-              onClose();
-            }}
-            className="px-4 py-1.5 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl font-bold transition-colors cursor-pointer"
-          >
-            Close
-          </button>
-        </div>
-
       </div>
     </div>
   );

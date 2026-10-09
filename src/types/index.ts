@@ -1,5 +1,82 @@
 export type TargetDialect = 'cebuano_standard' | 'davao_bisaya' | 'boholano';
 
+export type MajorLanguageId = 'cebuano' | 'filipino' | 'english';
+
+export type ChallengeType = 
+  | 'lesson' 
+  | 'vocabulary' 
+  | 'listening' 
+  | 'voice' 
+  | 'scenario' 
+  | 'pronunciation' 
+  | 'grammar' 
+  | 'writing'
+  | 'reading'
+  | 'sulti_switch'
+  | 'culture' 
+  | 'review'
+  | 'challenge' 
+  | 'assessment';
+
+export interface JourneyChallenge {
+  id: string;
+  orderNumber: string;
+  title: string;
+  titleNative?: string;
+  description: string;
+  type: ChallengeType;
+  toolkitModuleId: string;
+  xpReward: number;
+  estimatedMinutes: number;
+  targetPhrases?: { native: string; english: string; phonetics?: string }[];
+  activities?: Activity[];
+}
+
+export interface LevelMasteryRequirement {
+  id: string;
+  label: string;
+  targetCount: number;
+  currentCount: number;
+  completed: boolean;
+  type: 'lessons' | 'score' | 'vocab' | 'speaking' | 'streak';
+}
+
+export interface JourneyLevel {
+  id: string;
+  levelNumber: number;
+  code: string;
+  title: string;
+  subtitle: string;
+  icon: string;
+  accentColor: string;
+  targetXp: number;
+  rewardBadgeId: string;
+  challenges: JourneyChallenge[];
+  unlockRequirements: LevelMasteryRequirement[];
+}
+
+export interface LanguagePathData {
+  id: MajorLanguageId;
+  name: string;
+  nativeName: string;
+  flag: string;
+  tagline: string;
+  description: string;
+  levels: JourneyLevel[];
+}
+
+export interface LearnerBadge {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  criteria: string;
+  unlocked: boolean;
+  unlockedDate?: string;
+  progressPercent: number;
+  category: 'milestone' | 'skill' | 'streak' | 'mastery';
+}
+
 export interface DayActivity {
   id: string;
   date: string;

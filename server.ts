@@ -1,10 +1,11 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import type { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import http from 'http';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
+import { GoogleGenAI, Modality, type LiveServerMessage } from '@google/genai';
 import { WebSocketServer, WebSocket } from 'ws';
 
 dotenv.config();
@@ -13,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json({ limit: '50mb' }));
 
@@ -1189,6 +1190,6 @@ wss.on('connection', async (clientWs: WebSocket) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`SultiAI Full-Stack Server running on http://0.0.0.0:${PORT}`);
 });
